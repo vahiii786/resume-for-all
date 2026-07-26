@@ -147,10 +147,10 @@ with tab2:
     with b_col1:
         st.markdown("### 📝 Enter Details")
         full_name = st.text_input("Full Name", "Your Full Name")
-        title = st.text_input("Professional Title", "Computer Science Graduate / Developer")
+        title = st.text_input("Professional Title", "Data Science / Developer")
         email = st.text_input("Email", "yourname@email.com")
         phone = st.text_input("Phone", "+91 9876543210")
-        location = st.text_input("Location", "Hyderabad, India")
+        location = st.text_input("Location", "Bhimavaram, India")
         linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/yourprofile")
 
         st.markdown("---")
@@ -189,20 +189,23 @@ with tab2:
         <style>
             body {{ font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #333; }}
             .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 25px; border-radius: 8px; }}
-            h1 {{ color: #1E3A8A; margin-bottom: 2px; font-size: 24px; text-transform: uppercase; }}
-            .title {{ font-size: 14px; font-weight: bold; color: #4B5563; margin-top: 2px; }}
-            .contact {{ font-size: 12px; color: #6B7280; margin-bottom: 12px; }}
+            .header-container {{ text-align: center; margin-bottom: 10px; }}
+            h1 {{ color: #1E3A8A; margin: 0 0 4px 0; font-size: 26px; text-transform: uppercase; letter-spacing: 0.5px; }}
+            .title {{ font-size: 15px; font-weight: bold; color: #4B5563; margin-bottom: 6px; }}
+            .contact {{ font-size: 12px; color: #4B5563; margin-bottom: 8px; }}
             hr {{ border: 0; border-top: 2px solid #1E3A8A; margin-bottom: 15px; }}
-            h3 {{ color: #1E3A8A; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 12px; margin-bottom: 6px; }}
+            h3 {{ color: #1E3A8A; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
             p {{ font-size: 12.5px; line-height: 1.4; margin: 0; white-space: pre-line; }}
-            .footer-table {{ width: 100%; margin-top: 15px; font-size: 12px; color: #555; }}
+            .footer-table {{ width: 100%; margin-top: 20px; font-size: 12px; color: #555; }}
         </style>
         </head>
         <body>
             <div class="resume-card">
-                <h1>{full_name}</h1>
-                <div class="title">{title}</div>
-                <div class="contact">📍 {location} | 📞 {phone} | 📧 {email} | 🌐 {linkedin}</div>
+                <div class="header-container">
+                    <h1>{full_name}</h1>
+                    <div class="title">{title}</div>
+                    <div class="contact">📍 {location} &nbsp;|&nbsp; 📞 {phone} &nbsp;|&nbsp; 📧 {email} &nbsp;|&nbsp; 🌐 {linkedin}</div>
+                </div>
                 <hr>
                 
                 {objective_section}
