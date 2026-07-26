@@ -24,15 +24,16 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🚀 All-in-One Smart AI Resume & Career Suite")
+st.title("🚀 Smart AI Resume Hub & Live Builder")
 
-# Navigation Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+# Navigation Tabs (All 6 Tabs Included!)
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
-    "🎯 Smart Keyword Placement & Red Flags", 
-    "💰 Market Salary Predictor", 
-    "✉️ HR Cold Email & Outreach", 
-    "🎤 AI Mock Interview Practice"
+    "✏️ Live Resume Builder",
+    "🎯 Keyword Placement & Red Flags", 
+    "💰 Salary Predictor", 
+    "✉️ HR Cold Outreach", 
+    "🎤 AI Mock Interview"
 ])
 
 # Shared Helper Functions
@@ -136,8 +137,74 @@ with tab1:
         else:
             st.error("Please upload/paste both Resume and Job Description in the Sidebar!")
 
-# ==================== TAB 2: SMART PLACEMENT & RED FLAGS ====================
+# ==================== TAB 2: LIVE RESUME BUILDER & EDITOR ====================
 with tab2:
+    st.subheader("✏️ Build & Edit Your ATS Resume")
+    st.write("Fill in your details below to dynamically create and preview your modern ATS resume!")
+
+    b_col1, b_col2 = st.columns([1, 1])
+
+    with b_col1:
+        st.markdown("### 📝 Enter Details")
+        full_name = st.text_input("Full Name", "John Doe")
+        title = st.text_input("Professional Title", "Full Stack Developer")
+        email = st.text_input("Email", "johndoe@email.com")
+        phone = st.text_input("Phone", "+91 9876543210")
+        location = st.text_input("Location", "Hyderabad, India")
+        linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/johndoe")
+
+        st.markdown("---")
+        summary = st.text_area("Summary", "Results-driven Developer experienced in building web applications and AI tools.")
+        skills = st.text_area("Skills", "Python, Streamlit, SQL, Git, HTML/CSS, REST APIs")
+        experience = st.text_area("Experience", "Software Developer | Tech Corp (2022 - Present)\n- Built interactive web tools.\n- Improved performance by 30%.")
+        education = st.text_area("Education", "B.Tech Computer Science | JNTU (2018 - 2022)")
+        projects = st.text_area("Projects", "Smart Resume Assistant\n- Streamlit app with ATS score & job cards.")
+
+    with b_col2:
+        st.markdown("### 👁️ Live Preview")
+        html_resume = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #333; }}
+            .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 25px; border-radius: 8px; }}
+            h1 {{ color: #1E3A8A; margin-bottom: 2px; font-size: 24px; }}
+            .title {{ font-size: 15px; font-weight: bold; color: #4B5563; margin-top: 2px; }}
+            .contact {{ font-size: 12px; color: #6B7280; margin-bottom: 12px; }}
+            hr {{ border: 0; border-top: 2px solid #1E3A8A; margin-bottom: 15px; }}
+            h3 {{ color: #1E3A8A; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 12px; margin-bottom: 6px; }}
+            p {{ font-size: 13px; line-height: 1.4; margin: 0; white-space: pre-line; }}
+        </style>
+        </head>
+        <body>
+            <div class="resume-card">
+                <h1>{full_name}</h1>
+                <div class="title">{title}</div>
+                <div class="contact">📧 {email} | 📞 {phone} | 📍 {location} | 🌐 {linkedin}</div>
+                <hr>
+                <h3>Professional Summary</h3><p>{summary}</p>
+                <h3>Technical Skills</h3><p>{skills}</p>
+                <h3>Work Experience</h3><p>{experience}</p>
+                <h3>Projects</h3><p>{projects}</p>
+                <h3>Education</h3><p>{education}</p>
+            </div>
+        </body>
+        </html>
+        """
+        st.markdown(html_resume, unsafe_allow_html=True)
+        st.write("")
+        st.download_button(
+            label="📥 Download HTML Resume (Open & Press Ctrl+P for PDF)",
+            data=html_resume,
+            file_name=f"{full_name.replace(' ', '_')}_Resume.html",
+            mime="text/html",
+            type="primary",
+            use_container_width=True
+        )
+
+# ==================== TAB 3: SMART PLACEMENT & RED FLAGS ====================
+with tab3:
     st.subheader("💡 ATS Keyword Placement & Red Flag Detector")
     if resume_text.strip() != "" and job_description.strip() != "":
         missing = get_missing_keywords(resume_text, job_description)
@@ -159,17 +226,14 @@ with tab2:
             st.write("👉 **Replace them with Action Words:** `Spearheaded`, `Engineered`, `Optimized`, `Implemented`.")
         else:
             st.success("✅ Clean Resume! No weak or cliché buzzwords detected.")
-
     else:
         st.info("Upload Resume & JD in Sidebar to see Placement Suggestions!")
 
-# ==================== TAB 3: SALARY PREDICTOR ====================
-with tab3:
+# ==================== TAB 4: SALARY PREDICTOR ====================
+with tab4:
     st.subheader("💰 Market Experience & Salary Range Predictor")
     if job_description.strip() != "":
         target_role = extract_job_title(job_description)
-        
-        # Simple Rule-based Salary Estimator
         exp_match = re.search(r'(\d+)\+?\s*(years|yrs)', job_description.lower())
         exp_years = int(exp_match.group(1)) if exp_match else 2
         
@@ -177,50 +241,47 @@ with tab3:
         max_pay = base_pay + 5
         
         st.write(f"**Target Role:** `{target_role}`")
-        st.write(f"**Estimated Required Experience:** `{exp_years}+ Years`")
-        
+        st.write(f"**Estimated Experience Required:** `{exp_years}+ Years`")
         st.metric("Predicted Annual Package (India Market)", f"₹{base_pay:.1f} LPA - ₹{max_pay:.1f} LPA")
-        st.caption("Note: Salary estimates are derived from current domain trends and job specification requirements.")
     else:
         st.info("Upload Job Description in Sidebar to Predict Salary Range!")
 
-# ==================== TAB 4: HR COLD OUTREACH ====================
-with tab4:
+# ==================== TAB 5: HR COLD OUTREACH ====================
+with tab5:
     st.subheader("✉️ HR Cold Email & LinkedIn Message Generator")
     if resume_text.strip() != "" and job_description.strip() != "":
         target_role = extract_job_title(job_description)
         
-        st.markdown("### 💼 LinkedIn Direct Connection Request (Under 300 Chars)")
-        linkedin_msg = f"Hi [Hiring Manager Name], I came across the {target_role} opening. With hands-on experience in relevant tools and a strong background matching your JD, I'd love to connect and discuss how I can contribute!"
+        st.markdown("### 💼 LinkedIn Direct Connection Request")
+        linkedin_msg = f"Hi [Hiring Manager Name], I came across the {target_role} opening. With hands-on experience in relevant tools and a strong background matching your JD, I'd love to connect!"
         st.code(linkedin_msg, language="text")
 
         st.markdown("### 📧 Email Cold Outreach Draft")
-        email_msg = f"Subject: Application for {target_role} Position - [Your Name]\n\nDear Hiring Manager,\n\nI noticed the opening for {target_role} and wanted to reach out directly. Having closely reviewed the job responsibilities, my technical skill set aligns well with your team's current needs.\n\nI have attached my resume for your review and look forward to the opportunity to connect.\n\nBest regards,\n[Your Name]\n[Your Phone Number]"
+        email_msg = f"Subject: Application for {target_role} Position - [Your Name]\n\nDear Hiring Manager,\n\nI noticed the opening for {target_role} and wanted to reach out directly. My technical skills align well with your job description.\n\nBest regards,\n[Your Name]"
         st.code(email_msg, language="text")
     else:
         st.info("Upload Resume & JD in Sidebar to Generate Outreach Messages!")
 
-# ==================== TAB 5: MOCK INTERVIEW ====================
-with tab5:
+# ==================== TAB 6: MOCK INTERVIEW ====================
+with tab6:
     st.subheader("🎤 AI Technical Mock Interview Practice")
     if job_description.strip() != "":
         target_role = extract_job_title(job_description)
         st.write(f"Practice top interview questions tailored for **{target_role}**:")
 
-        q1 = f"1. How have you applied core technical skills required for a {target_role} in your previous projects?"
-        q2 = "2. Describe a challenging bug or technical problem you faced and how you resolved it."
-        q3 = "3. How do you ensure code quality and efficiency when working under tight deadlines?"
+        q1 = f"1. How have you applied technical skills for {target_role} in your previous projects?"
+        q2 = "2. Describe a challenging bug you resolved recently."
 
         st.write(q1)
-        ans1 = st.text_area("Type your response for Question 1:", key="q1")
+        ans1 = st.text_area("Your Response for Question 1:", key="q1")
         
         st.write(q2)
-        ans2 = st.text_area("Type your response for Question 2:", key="q2")
+        ans2 = st.text_area("Your Response for Question 2:", key="q2")
 
         if st.button("Evaluate Answers 📝"):
             if ans1.strip() != "" or ans2.strip() != "":
-                st.success("✅ **AI Feedback:** Good response structure! Make sure to mention specific metric improvements (e.g., *'Improved efficiency by 20%'*) to make your answers even stronger!")
+                st.success("✅ **AI Feedback:** Good structure! Mention specific metric improvements (e.g., *'Improved speed by 20%'*) to make it even stronger!")
             else:
-                st.warning("Please type your answers before requesting evaluation.")
+                st.warning("Please type your answers first!")
     else:
         st.info("Upload Job Description in Sidebar to Start Mock Interview!")
