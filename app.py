@@ -1,18 +1,36 @@
 import streamlit as st
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import re
+from collections import Counter
+import math
 
 st.set_page_config(page_title="AI Resume Matcher", page_icon="📄", layout="wide")
 
 st.title("📄 Smart AI Resume & Skill Gap Analyzer")
-st.write("Analyze your resume alignment against job descriptions and find exact skill gaps.")
+st.write("Analyze your resume alignment against job descriptions using pure NLP matching.")
+
+# Pure Python Cosine Similarity function
+def text_to_vector(text):
+    words = re.findall(r'\w+', text.lower())
+    return Counter(words)
+
+def get_cosine_similarity(vec1, vec2):
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    numerator = sum([vec1[x] * vec2[x] for x in intersection])
+
+    sum1 = sum([vec1[x]**2 for x in list(vec1.keys())])
+    sum2 = sum([vec2[x]**2 for x in list(vec2.keys())])
+    denominator = math.sqrt(sum1) * math.sqrt(sum2)
+
+    if not denominator:
+        return 0.0
+    else:
+        return float(numerator) / denominator
 
 def get_missing_keywords(resume_text, jd_text):
     clean_resume = set(re.findall(r'\b[a-zA-Z]{3,}\b', resume_text.lower()))
     clean_jd = set(re.findall(r'\b[a-zA-Z]{3,}\b', jd_text.lower()))
     
-    stop_words = {'and', 'the', 'for', 'with', 'you', 'this', 'that', 'from', 'have', 'will', 'are', 'your', 'our', 'work', 'experience'}
+    stop_words = {'and', 'the', 'for', 'with', 'you', 'this', 'that', 'from', 'have', 'will', 'are', 'your', 'our', 'work', 'experience', 'this', 'that'}
     
     jd_keywords = clean_jd - stop_words
     resume_keywords = clean_resume - stop_words
@@ -32,12 +50,11 @@ with col2:
 
 if st.button("Analyze Resume & Find Gaps 🚀", type="primary"):
     if resume_text.strip() != "" and job_description.strip() != "":
-        text_list = [resume_text, job_description]
-        vectorizer = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = vectorizer.fit_transform(text_list)
+        v1 = text_to_vector(resume_text)
+        v2 = text_to_vector(job_description)
         
-        similarity_matrix = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
-        match_percentage = round(similarity_matrix[0][0] * 100, 2)
+        similarity = get_cosine_similarity(v1, v2)
+        match_percentage = round(similarity * 100, 2)
         
         missing_skills = get_missing_keywords(resume_text, job_description)
         
@@ -47,9 +64,9 @@ if st.button("Analyze Resume & Find Gaps 🚀", type="primary"):
         m_col1, m_col2 = st.columns(2)
         with m_col1:
             st.metric(label="Match Score Percentage", value=f"{match_percentage}%")
-            if match_percentage >= 70:
+            if match_percentage >= 50:
                 st.success("🎯 Excellent Alignment!")
-            elif match_percentage >= 40:
+            elif match_percentage >= 25:
                 st.warning("⚠️ Moderate Alignment.")
             else:
                 st.error("❌ Low Alignment.")
