@@ -26,7 +26,7 @@ st.set_page_config(
 
 st.title("🚀 Smart AI Resume Hub & Live Builder")
 
-# Navigation Tabs (All 6 Tabs Included!)
+# Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
     "✏️ Live Resume Builder",
@@ -140,36 +140,48 @@ with tab1:
 # ==================== TAB 2: LIVE RESUME BUILDER & EDITOR ====================
 with tab2:
     st.subheader("✏️ Build & Edit Your ATS Resume")
-    st.write("Fill in your details below to dynamically create and preview your modern ATS resume!")
+    st.write("Fill in your details below. Sections left empty will automatically be hidden from the final resume!")
 
     b_col1, b_col2 = st.columns([1, 1])
 
     with b_col1:
         st.markdown("### 📝 Enter Details")
-        full_name = st.text_input("Full Name", "John Doe")
+        full_name = st.text_input("Full Name", "Your Full Name")
         title = st.text_input("Professional Title", "Computer Science Graduate / Developer")
-        email = st.text_input("Email", "johndoe@email.com")
+        email = st.text_input("Email", "yourname@email.com")
         phone = st.text_input("Phone", "+91 9876543210")
         location = st.text_input("Location", "Hyderabad, India")
-        linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/johndoe")
+        linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/yourprofile")
 
         st.markdown("---")
-        objective = st.text_area("Career Objective", "Motivated Computer Science graduate with strong skills in C, Java, and DBMS. Seeking an entry-level position to contribute to company growth while advancing professionally.")
-        education = st.text_area("Education", "Bachelor's Degree - B.Sc | University Name (2023 - 2026)\nHigher Secondary School | College Name (2020 - 2022)\nSecondary School | High School Name (2020)")
-        skills = st.text_area("Technical Skills", "Programming: C, Java, Python\nDatabases: DBMS, SQL\nCore Concepts: Algorithms, Computer Fundamentals, Data Structures")
-        certifications = st.text_area("Certifications (New)", "- Cisco Certified: C & Cybersecurity\n- Infosys Springboard: Algorithms & C Programming\n- DigiSaksham: Essentials of GenAI\n- HackerRank: C & Java")
-        projects = st.text_area("Key Projects", "Smart AI Resume Matcher\n- Developed a Streamlit web application for real-time ATS analysis.")
-        experience = st.text_area("Work / Internship Experience", "Software Intern | Tech Corp (2025)\n- Handled database management and API testing.")
-        languages = st.text_area("Language Competencies (New)", "English: Fluent (Speaking, Reading, Writing)\nTelugu: Native\nHindi: Conversational")
-        hobbies = st.text_input("Interests / Hobbies (New)", "Reading Tech Blogs, Cooking, Problem Solving")
+        objective = st.text_area("Career Objective", "")
+        education = st.text_area("Education", "")
+        skills = st.text_area("Technical Skills", "")
+        certifications = st.text_area("Certifications (Optional)", "")
+        projects = st.text_area("Key Projects", "")
+        experience = st.text_area("Work / Internship Experience (Optional)", "")
+        languages = st.text_area("Language Competencies", "")
+        hobbies = st.text_input("Interests / Hobbies (Optional)", "")
         
         st.markdown("---")
-        st.markdown("#### 📜 Declaration Details (New)")
+        st.markdown("#### 📜 Declaration Details")
         declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
-        dec_date = st.text_input("Date", "20/04/2026")
+        dec_date = st.text_input("Date", "")
 
     with b_col2:
         st.markdown("### 👁️ Live Preview")
+        
+        # Build Dynamic HTML Sections
+        objective_section = f"<h3>Career Objective</h3><p>{objective}</p>" if objective.strip() else ""
+        education_section = f"<h3>Education</h3><p>{education}</p>" if education.strip() else ""
+        skills_section = f"<h3>Technical Skills</h3><p>{skills}</p>" if skills.strip() else ""
+        cert_section = f"<h3>Certifications</h3><p>{certifications}</p>" if certifications.strip() else ""
+        projects_section = f"<h3>Projects</h3><p>{projects}</p>" if projects.strip() else ""
+        exp_section = f"<h3>Experience / Internships</h3><p>{experience}</p>" if experience.strip() else ""
+        lang_section = f"<h3>Language Competencies</h3><p>{languages}</p>" if languages.strip() else ""
+        hobbies_section = f"<h3>Interests / Hobbies</h3><p>{hobbies}</p>" if hobbies.strip() else ""
+        declaration_section = f"<h3>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
+
         html_resume = f"""
         <!DOCTYPE html>
         <html>
@@ -193,17 +205,15 @@ with tab2:
                 <div class="contact">📍 {location} | 📞 {phone} | 📧 {email} | 🌐 {linkedin}</div>
                 <hr>
                 
-                <h3>Career Objective</h3><p>{objective}</p>
-                <h3>Education</h3><p>{education}</p>
-                <h3>Technical Skills</h3><p>{skills}</p>
-                <h3>Certifications</h3><p>{certifications}</p>
-                <h3>Projects</h3><p>{projects}</p>
-                <h3>Experience / Internships</h3><p>{experience}</p>
-                <h3>Language Competencies</h3><p>{languages}</p>
-                <h3>Interests / Hobbies</h3><p>{hobbies}</p>
-                
-                <h3>Declaration</h3>
-                <p>{declaration}</p>
+                {objective_section}
+                {education_section}
+                {skills_section}
+                {cert_section}
+                {projects_section}
+                {exp_section}
+                {lang_section}
+                {hobbies_section}
+                {declaration_section}
                 
                 <table class="footer-table">
                     <tr>
