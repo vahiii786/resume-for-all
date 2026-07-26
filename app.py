@@ -147,18 +147,26 @@ with tab2:
     with b_col1:
         st.markdown("### 📝 Enter Details")
         full_name = st.text_input("Full Name", "John Doe")
-        title = st.text_input("Professional Title", "Full Stack Developer")
+        title = st.text_input("Professional Title", "Computer Science Graduate / Developer")
         email = st.text_input("Email", "johndoe@email.com")
         phone = st.text_input("Phone", "+91 9876543210")
         location = st.text_input("Location", "Hyderabad, India")
         linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/johndoe")
 
         st.markdown("---")
-        summary = st.text_area("Summary", "Results-driven Developer experienced in building web applications and AI tools.")
-        skills = st.text_area("Skills", "Python, Streamlit, SQL, Git, HTML/CSS, REST APIs")
-        experience = st.text_area("Experience", "Software Developer | Tech Corp (2022 - Present)\n- Built interactive web tools.\n- Improved performance by 30%.")
-        education = st.text_area("Education", "B.Tech Computer Science | JNTU (2018 - 2022)")
-        projects = st.text_area("Projects", "Smart Resume Assistant\n- Streamlit app with ATS score & job cards.")
+        objective = st.text_area("Career Objective", "Motivated Computer Science graduate with strong skills in C, Java, and DBMS. Seeking an entry-level position to contribute to company growth while advancing professionally.")
+        education = st.text_area("Education", "Bachelor's Degree - B.Sc | University Name (2023 - 2026)\nHigher Secondary School | College Name (2020 - 2022)\nSecondary School | High School Name (2020)")
+        skills = st.text_area("Technical Skills", "Programming: C, Java, Python\nDatabases: DBMS, SQL\nCore Concepts: Algorithms, Computer Fundamentals, Data Structures")
+        certifications = st.text_area("Certifications (New)", "- Cisco Certified: C & Cybersecurity\n- Infosys Springboard: Algorithms & C Programming\n- DigiSaksham: Essentials of GenAI\n- HackerRank: C & Java")
+        projects = st.text_area("Key Projects", "Smart AI Resume Matcher\n- Developed a Streamlit web application for real-time ATS analysis.")
+        experience = st.text_area("Work / Internship Experience", "Software Intern | Tech Corp (2025)\n- Handled database management and API testing.")
+        languages = st.text_area("Language Competencies (New)", "English: Fluent (Speaking, Reading, Writing)\nTelugu: Native\nHindi: Conversational")
+        hobbies = st.text_input("Interests / Hobbies (New)", "Reading Tech Blogs, Cooking, Problem Solving")
+        
+        st.markdown("---")
+        st.markdown("#### 📜 Declaration Details (New)")
+        declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
+        dec_date = st.text_input("Date", "20/04/2026")
 
     with b_col2:
         st.markdown("### 👁️ Live Preview")
@@ -169,25 +177,44 @@ with tab2:
         <style>
             body {{ font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #333; }}
             .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 25px; border-radius: 8px; }}
-            h1 {{ color: #1E3A8A; margin-bottom: 2px; font-size: 24px; }}
-            .title {{ font-size: 15px; font-weight: bold; color: #4B5563; margin-top: 2px; }}
+            h1 {{ color: #1E3A8A; margin-bottom: 2px; font-size: 24px; text-transform: uppercase; }}
+            .title {{ font-size: 14px; font-weight: bold; color: #4B5563; margin-top: 2px; }}
             .contact {{ font-size: 12px; color: #6B7280; margin-bottom: 12px; }}
             hr {{ border: 0; border-top: 2px solid #1E3A8A; margin-bottom: 15px; }}
-            h3 {{ color: #1E3A8A; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 12px; margin-bottom: 6px; }}
-            p {{ font-size: 13px; line-height: 1.4; margin: 0; white-space: pre-line; }}
+            h3 {{ color: #1E3A8A; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 12px; margin-bottom: 6px; }}
+            p {{ font-size: 12.5px; line-height: 1.4; margin: 0; white-space: pre-line; }}
+            .footer-table {{ width: 100%; margin-top: 15px; font-size: 12px; color: #555; }}
         </style>
         </head>
         <body>
             <div class="resume-card">
                 <h1>{full_name}</h1>
                 <div class="title">{title}</div>
-                <div class="contact">📧 {email} | 📞 {phone} | 📍 {location} | 🌐 {linkedin}</div>
+                <div class="contact">📍 {location} | 📞 {phone} | 📧 {email} | 🌐 {linkedin}</div>
                 <hr>
-                <h3>Professional Summary</h3><p>{summary}</p>
-                <h3>Technical Skills</h3><p>{skills}</p>
-                <h3>Work Experience</h3><p>{experience}</p>
-                <h3>Projects</h3><p>{projects}</p>
+                
+                <h3>Career Objective</h3><p>{objective}</p>
                 <h3>Education</h3><p>{education}</p>
+                <h3>Technical Skills</h3><p>{skills}</p>
+                <h3>Certifications</h3><p>{certifications}</p>
+                <h3>Projects</h3><p>{projects}</p>
+                <h3>Experience / Internships</h3><p>{experience}</p>
+                <h3>Language Competencies</h3><p>{languages}</p>
+                <h3>Interests / Hobbies</h3><p>{hobbies}</p>
+                
+                <h3>Declaration</h3>
+                <p>{declaration}</p>
+                
+                <table class="footer-table">
+                    <tr>
+                        <td><strong>Location:</strong> {location}</td>
+                        <td style="text-align: right;"><strong>Signature:</strong> {full_name}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date:</strong> {dec_date}</td>
+                        <td></td>
+                    </tr>
+                </table>
             </div>
         </body>
         </html>
