@@ -1,6 +1,6 @@
 streamlit
 scikit-learn
-PyPDF2
+pypdf
 python-docx
 pytesseract
 Pillow
