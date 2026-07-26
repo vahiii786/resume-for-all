@@ -5,7 +5,7 @@ import math
 import urllib.parse
 import io
 
-# Safe Imports
+# Safe Imports for Resume Reading
 try:
     from pypdf import PdfReader
 except ImportError:
@@ -18,6 +18,16 @@ try:
     import docx
 except ImportError:
     docx = None
+
+# PDF Generator Library (reportlab)
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 st.set_page_config(page_title="AI Resume Hub & Builder", page_icon="📄", layout="wide")
 
@@ -179,7 +189,7 @@ with tab2:
     with b_col2:
         st.markdown("### 👁️ Live Resume Preview")
         
-        # HTML/CSS Template for Modern Clean Resume
+        # HTML/CSS Template for Screen Preview
         resume_template = f"""
         <div style="background-color:#ffffff; color:#000000; padding:25px; border-radius:8px; border:1px solid #ddd; font-family:Arial, sans-serif;">
             <h1 style="margin:0; color:#1E3A8A; font-size:26px;">{full_name}</h1>
@@ -203,16 +213,60 @@ with tab2:
             <p style="font-size:13px; line-height:1.4; white-space: pre-line;">{education}</p>
         </div>
         """
-        
         st.markdown(resume_template, unsafe_allow_html=True)
         st.write("")
-        
-        # Download Resume
-        plain_resume_text = f"{full_name}\n{title}\n{email} | {phone} | {location}\n\nSUMMARY\n{summary}\n\nSKILLS\n{skills}\n\nEXPERIENCE\n{experience}\n\nPROJECTS\n{projects}\n\nEDUCATION\n{education}"
-        st.download_button(
-            label="📥 Download Resume Text File",
-            data=plain_resume_text,
-            file_name=f"{full_name.replace(' ', '_')}_Resume.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
+
+        # PDF Generator Function
+        def generate_pdf():
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+            styles = getSampleStyleSheet()
+            
+            # Custom Styles
+            name_style = ParagraphStyle('NameStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=20, textColor=colors.HexColor("#1E3A8A"), spaceAfter=2)
+            title_style = ParagraphStyle('TitleStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor("#4B5563"), spaceAfter=4)
+            contact_style = ParagraphStyle('ContactStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.HexColor("#6B7280"), spaceAfter=10)
+            heading_style = ParagraphStyle('HeadingStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor("#1E3A8A"), spaceBefore=10, spaceAfter=4)
+            body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, leading=14, spaceAfter=8)
+
+            story = []
+            
+            # Header
+            story.append(Paragraph(full_name, name_style))
+            story.append(Paragraph(title, title_style))
+            story.append(Paragraph(f"{email} | {phone} | {location} | {linkedin}", contact_style))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#1E3A8A"), spaceAfter=10))
+
+            # Sections
+            story.append(Paragraph("Professional Summary", heading_style))
+            story.append(Paragraph(summary.replace('\n', '<br/>'), body_style))
+
+            story.append(Paragraph("Technical Skills", heading_style))
+            story.append(Paragraph(skills.replace('\n', '<br/>'), body_style))
+
+            story.append(Paragraph("Work Experience", heading_style))
+            story.append(Paragraph(experience.replace('\n', '<br/>'), body_style))
+
+            story.append(Paragraph("Key Projects", heading_style))
+            story.append(Paragraph(projects.replace('\n', '<br/>'), body_style))
+
+            story.append(Paragraph("Education", heading_style))
+            story.append(Paragraph(education.replace('\n', '<br/>'), body_style))
+
+            doc.build(story)
+            buffer.seek(0)
+            return buffer.getvalue()
+
+        # Download PDF Button
+        if REPORTLAB_AVAILABLE:
+            pdf_bytes = generate_pdf()
+            st.download_button(
+                label="📥 Download Professional Resume (PDF)",
+                data=pdf_bytes,
+                file_name=f"{full_name.replace(' ', '_')}_Resume.pdf",
+                mime="application/pdf",
+                type="primary",
+                use_container_width=True
+            )
+        else:
+            st.error("ReportLab library not installed. PDF generation is temporarily unavailable.")
