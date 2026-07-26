@@ -3,50 +3,65 @@ import re
 from collections import Counter
 import math
 import urllib.parse
-from pypdf import PdfReader
-import docx
-from PIL import Image
-import pytesseract
+import io
+
+# Safe Imports (App crash avvakunda kaapadathayi)
+try:
+    from pypdf import PdfReader
+except ImportError:
+    try:
+        from PyPDF2 import PdfReader
+    except ImportError:
+        PdfReader = None
+
+try:
+    import docx
+except ImportError:
+    docx = None
 
 st.set_page_config(page_title="AI Resume Matcher & Career Hub", page_icon="📄", layout="wide")
 
 st.title("📄 Smart AI Resume Matcher & Job Assistant")
-st.write("Upload or paste your Resume (PDF, DOCX, Image, Text) and Job Description to get instant match score, skill gaps, live job search links, and custom cover letters!")
+st.write("Analyze your resume, extract PDF/DOCX text, get match scores, live job search links, and a custom cover letter!")
 
-# Text Extraction Helper Functions
+# Helper Function to Extract Text from PDF/DOCX safely
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
         return ""
     
     file_type = uploaded_file.name.split('.')[-1].lower()
-    extracted_text = ""
+    text = ""
     
-    try:
-        # PDF File
-        if file_type == 'pdf':
-            pdf_reader = PdfReader(uploaded_file)
-            for page in pdf_reader.pages:
-                text = page.extract_text()
-                if text:
-                    extracted_text += text + "\n"
-                    
-        # Word File (.docx)
-        elif file_type in ['docx', 'doc']:
-            doc = docx.Document(uploaded_file)
-            for para in doc.paragraphs:
-                extracted_text += para.text + "\n"
-                
-        # Image File (PNG, JPG, JPEG)
-        elif file_type in ['png', 'jpg', 'jpeg']:
-            image = Image.open(uploaded_file)
-            extracted_text = pytesseract.image_to_string(image)
+    if file_type == "pdf":
+        if PdfReader is not None:
+            try:
+                reader = PdfReader(uploaded_file)
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+            except Exception as e:
+                st.error("Error reading PDF file. Please paste text directly.")
+        else:
+            st.warning("⚠️ PDF parser package is installing in background. Please paste text below for instant result!")
             
-    except Exception as e:
-        st.error(f"Error reading {uploaded_file.name}: {e}")
-        
-    return extracted_text
+    elif file_type in ["docx", "doc"]:
+        if docx is not None:
+            try:
+                doc = docx.Document(uploaded_file)
+                for para in doc.paragraphs:
+                    text += para.text + "\n"
+            except Exception as e:
+                st.error("Error reading Word file. Please paste text directly.")
+        else:
+            st.warning("⚠️ DOCX parser package is installing in background. Please paste text below for instant result!")
+            
+    elif file_type in ["txt", "md"]:
+        try:
+            text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
+        except Exception:
+            text = ""
+            
+    return text
 
-# Math & Similarity Logic
 def text_to_vector(text):
     words = re.findall(r'\w+', text.lower())
     return Counter(words)
@@ -77,29 +92,24 @@ def extract_job_title(jd_text):
             return clean.strip()
     return "Software Developer"
 
-# Layout UI
+# Layout
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Resume Input")
-    resume_file = st.file_uploader("Upload Resume (PDF, DOCX, PNG, JPG)", type=["pdf", "docx", "png", "jpg", "jpeg"])
-    resume_text_input = st.text_area("OR Paste Resume Text here...", height=150)
+    resume_file = st.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
+    resume_text_input = st.text_area("OR Paste Resume Text here...", height=180)
     
-    # Priority: Uploaded File > Text Input
-    if resume_file is not None:
-        resume_text = extract_text_from_file(resume_file)
-    else:
-        resume_text = resume_text_input
+    extracted_resume_file_text = extract_text_from_file(resume_file)
+    resume_text = extracted_resume_file_text if extracted_resume_file_text.strip() != "" else resume_text_input
 
 with col2:
     st.subheader("2. Job Description Input")
-    jd_file = st.file_uploader("Upload Job Description (PDF, DOCX, Image)", type=["pdf", "docx", "png", "jpg", "jpeg"])
-    jd_text_input = st.text_area("OR Paste Job Description here...", height=150)
+    jd_file = st.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
+    jd_text_input = st.text_area("OR Paste Job Description here...", height=180)
     
-    if jd_file is not None:
-        job_description = extract_text_from_file(jd_file)
-    else:
-        job_description = jd_text_input
+    extracted_jd_file_text = extract_text_from_file(jd_file)
+    job_description = extracted_jd_file_text if extracted_jd_file_text.strip() != "" else jd_text_input
 
 if st.button("Analyze Resume & Find Opportunities 🚀", type="primary"):
     if resume_text.strip() != "" and job_description.strip() != "":
@@ -178,4 +188,4 @@ Sincerely,
         st.text_area("Copy your Cover Letter:", cover_letter, height=180)
         
     else:
-        st.error("Please provide Resume and Job Description (either via upload or text paste)!")
+        st.error("Please provide Resume and Job Description (either via PDF/DOCX file upload or text paste)!")
