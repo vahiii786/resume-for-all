@@ -3,7 +3,6 @@ import re
 from collections import Counter
 import math
 import urllib.parse
-import io
 
 # Safe Imports for Resume Reading
 try:
@@ -18,16 +17,6 @@ try:
     import docx
 except ImportError:
     docx = None
-
-# PDF Generator Library (reportlab)
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib import colors
-    REPORTLAB_AVAILABLE = True
-except ImportError:
-    REPORTLAB_AVAILABLE = False
 
 st.set_page_config(page_title="AI Resume Hub & Builder", page_icon="📄", layout="wide")
 
@@ -189,84 +178,62 @@ with tab2:
     with b_col2:
         st.markdown("### 👁️ Live Resume Preview")
         
-        # HTML/CSS Template for Screen Preview
-        resume_template = f"""
-        <div style="background-color:#ffffff; color:#000000; padding:25px; border-radius:8px; border:1px solid #ddd; font-family:Arial, sans-serif;">
-            <h1 style="margin:0; color:#1E3A8A; font-size:26px;">{full_name}</h1>
-            <p style="font-size:16px; font-weight:bold; color:#4B5563; margin-top:5px;">{title}</p>
-            <p style="font-size:12px; color:#6B7280;">📧 {email} | 📞 {phone} | 📍 {location} | 🌐 {linkedin}</p>
-            <hr style="border:0.5px solid #1E3A8A;">
-            
-            <h3 style="color:#1E3A8A; margin-bottom:5px;">Professional Summary</h3>
-            <p style="font-size:13px; line-height:1.4;">{summary}</p>
-            
-            <h3 style="color:#1E3A8A; margin-bottom:5px;">Technical Skills</h3>
-            <p style="font-size:13px; line-height:1.4;">{skills}</p>
-            
-            <h3 style="color:#1E3A8A; margin-bottom:5px;">Work Experience</h3>
-            <p style="font-size:13px; line-height:1.4; white-space: pre-line;">{experience}</p>
-            
-            <h3 style="color:#1E3A8A; margin-bottom:5px;">Projects</h3>
-            <p style="font-size:13px; line-height:1.4; white-space: pre-line;">{projects}</p>
-            
-            <h3 style="color:#1E3A8A; margin-bottom:5px;">Education</h3>
-            <p style="font-size:13px; line-height:1.4; white-space: pre-line;">{education}</p>
-        </div>
+        # HTML/CSS Printable Resume Code
+        html_resume = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }}
+            .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 30px; border-radius: 8px; }}
+            h1 {{ color: #1E3A8A; margin-bottom: 2px; font-size: 24px; }}
+            .title {{ font-size: 15px; font-weight: bold; color: #4B5563; margin-top: 2px; }}
+            .contact {{ font-size: 12px; color: #6B7280; margin-bottom: 12px; }}
+            hr {{ border: 0; border-top: 2px solid #1E3A8A; margin-bottom: 15px; }}
+            h3 {{ color: #1E3A8A; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 15px; margin-bottom: 8px; }}
+            p {{ font-size: 13px; line-height: 1.5; margin: 0; white-space: pre-line; }}
+            @media print {{
+                body {{ padding: 0; }}
+                .resume-card {{ border: none; padding: 0; }}
+            }}
+        </style>
+        </head>
+        <body>
+            <div class="resume-card">
+                <h1>{full_name}</h1>
+                <div class="title">{title}</div>
+                <div class="contact">📧 {email} | 📞 {phone} | 📍 {location} | 🌐 {linkedin}</div>
+                <hr>
+                
+                <h3>Professional Summary</h3>
+                <p>{summary}</p>
+                
+                <h3>Technical Skills</h3>
+                <p>{skills}</p>
+                
+                <h3>Work Experience</h3>
+                <p>{experience}</p>
+                
+                <h3>Projects</h3>
+                <p>{projects}</p>
+                
+                <h3>Education</h3>
+                <p>{education}</p>
+            </div>
+        </body>
+        </html>
         """
-        st.markdown(resume_template, unsafe_allow_html=True)
+        
+        st.markdown(html_resume, unsafe_allow_html=True)
         st.write("")
-
-        # PDF Generator Function
-        def generate_pdf():
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-            styles = getSampleStyleSheet()
-            
-            # Custom Styles
-            name_style = ParagraphStyle('NameStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=20, textColor=colors.HexColor("#1E3A8A"), spaceAfter=2)
-            title_style = ParagraphStyle('TitleStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor("#4B5563"), spaceAfter=4)
-            contact_style = ParagraphStyle('ContactStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.HexColor("#6B7280"), spaceAfter=10)
-            heading_style = ParagraphStyle('HeadingStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor("#1E3A8A"), spaceBefore=10, spaceAfter=4)
-            body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, leading=14, spaceAfter=8)
-
-            story = []
-            
-            # Header
-            story.append(Paragraph(full_name, name_style))
-            story.append(Paragraph(title, title_style))
-            story.append(Paragraph(f"{email} | {phone} | {location} | {linkedin}", contact_style))
-            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#1E3A8A"), spaceAfter=10))
-
-            # Sections
-            story.append(Paragraph("Professional Summary", heading_style))
-            story.append(Paragraph(summary.replace('\n', '<br/>'), body_style))
-
-            story.append(Paragraph("Technical Skills", heading_style))
-            story.append(Paragraph(skills.replace('\n', '<br/>'), body_style))
-
-            story.append(Paragraph("Work Experience", heading_style))
-            story.append(Paragraph(experience.replace('\n', '<br/>'), body_style))
-
-            story.append(Paragraph("Key Projects", heading_style))
-            story.append(Paragraph(projects.replace('\n', '<br/>'), body_style))
-
-            story.append(Paragraph("Education", heading_style))
-            story.append(Paragraph(education.replace('\n', '<br/>'), body_style))
-
-            doc.build(story)
-            buffer.seek(0)
-            return buffer.getvalue()
-
-        # Download PDF Button
-        if REPORTLAB_AVAILABLE:
-            pdf_bytes = generate_pdf()
-            st.download_button(
-                label="📥 Download Professional Resume (PDF)",
-                data=pdf_bytes,
-                file_name=f"{full_name.replace(' ', '_')}_Resume.pdf",
-                mime="application/pdf",
-                type="primary",
-                use_container_width=True
-            )
-        else:
-            st.error("ReportLab library not installed. PDF generation is temporarily unavailable.")
+        
+        # Pure HTML Download Button (Opens print dialog directly as PDF!)
+        st.download_button(
+            label="📥 Download HTML Resume (Open & Print to PDF)",
+            data=html_resume,
+            file_name=f"{full_name.replace(' ', '_')}_Resume.html",
+            mime="text/html",
+            type="primary",
+            use_container_width=True
+        )
+        st.info("💡 **How to Save as PDF:** Open the downloaded HTML file in Chrome/Edge, press **`Ctrl + P`** (or Print), and select **`Save as PDF`**!")
