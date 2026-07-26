@@ -3,7 +3,7 @@ import re
 from collections import Counter
 import math
 import urllib.parse
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 import docx
 from PIL import Image
 import pytesseract
