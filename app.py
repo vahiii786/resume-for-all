@@ -189,8 +189,8 @@ with tab2:
         email = st.text_input("Email", "yourname@email.com")
         phone = st.text_input("Phone", "+91 9876543210")
         location = st.text_input("Location", "Bhimavaram, India")
-        linkedin = st.text_input("LinkedIn Profile URL", "linkedin.com/in/yourprofile")
-        github = st.text_input("GitHub Profile URL", "github.com/yourusername")
+        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/yourprofile")
+        github = st.text_input("GitHub Profile URL", "https://github.com/yourusername")
 
         st.markdown("---")
         st.caption("💡 *Tip: Start sub-points with a dash (`- `) or star (`* `) to automatically convert them into clean bullet points!*")
@@ -222,12 +222,12 @@ with tab2:
         linkedin_url = format_url(linkedin)
         github_url = format_url(github)
 
-        # Build Clickable Contact Header Links
+        # Display exact text entered by user while being clickable
         contact_items = [f"📍 {location}", f"📞 {phone}", f"📧 {email}"]
         if linkedin.strip():
-            contact_items.append(f"🌐 <a href='{linkedin_url}' target='_blank' style='color:{primary_color}; font-weight:bold; text-decoration: underline;'>LinkedIn</a>")
+            contact_items.append(f"<a href='{linkedin_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{linkedin.strip()}</a>")
         if github.strip():
-            contact_items.append(f"💻 <a href='{github_url}' target='_blank' style='color:{primary_color}; font-weight:bold; text-decoration: underline;'>GitHub</a>")
+            contact_items.append(f"<a href='{github_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{github.strip()}</a>")
         
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
 
@@ -258,7 +258,7 @@ with tab2:
             h3 {{ font-family: 'Georgia', serif; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
             p {{ font-size: 12.5px; line-height: 1.4; margin: 0; white-space: pre-line; }}
             .footer-table {{ width: 100%; margin-top: 20px; font-size: 12px; color: #555; }}
-            a {{ text-decoration: none; }}
+            a {{ text-decoration: none; word-break: break-all; }}
         </style>
         </head>
         <body>
