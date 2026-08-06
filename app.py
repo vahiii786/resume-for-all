@@ -98,6 +98,33 @@ def format_url(url):
         return "https://" + url
     return url
 
+# Helper to render text with clean Bullet Points for Sub-points
+def format_bullet_points(text):
+    if not text.strip():
+        return ""
+    lines = text.strip().split('\n')
+    html_out = ""
+    in_list = False
+    
+    for line in lines:
+        line_str = line.strip()
+        if line_str.startswith("- ") or line_str.startswith("* ") or line_str.startswith("• "):
+            if not in_list:
+                html_out += "<ul style='margin: 4px 0 8px 18px; padding-left: 0; list-style-type: disc;'>"
+                in_list = True
+            clean_line = line_str.lstrip("-*• ").strip()
+            html_out += f"<li style='margin-bottom: 3px; font-size: 12.5px;'>{clean_line}</li>"
+        else:
+            if in_list:
+                html_out += "</ul>"
+                in_list = False
+            html_out += f"<p style='font-size: 12.5px; margin-bottom: 4px;'>{line_str}</p>"
+            
+    if in_list:
+        html_out += "</ul>"
+        
+    return html_out
+
 # Sidebar Inputs (Global)
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
@@ -166,14 +193,15 @@ with tab2:
         github = st.text_input("GitHub Profile URL", "github.com/yourusername")
 
         st.markdown("---")
+        st.caption("💡 *Tip: Start sub-points with a dash (`- `) or star (`* `) to automatically convert them into clean bullet points!*")
         objective = st.text_area("Career Objective", "")
-        education = st.text_area("Education", "")
-        skills = st.text_area("Technical Skills", "")
-        certifications = st.text_area("Certifications (Optional)", "")
-        projects = st.text_area("Key Projects", "")
+        education = st.text_area("Education", "- B.Sc Computer Science | Aditya Degree College (2023 - 2026)\n- Higher Secondary | Narayana Junior College (2020 - 2022)")
+        skills = st.text_area("Technical Skills", "- Languages: C, Java, Python\n- Databases: DBMS, SQL\n- Fundamentals: Algorithms, Data Structures")
+        certifications = st.text_area("Certifications (Optional)", "- Cisco Certification: C and Cybersecurity\n- Infosys Springboard: Computer Fundamentals & C")
+        projects = st.text_area("Key Projects", "- Smart AI Resume Matcher\n  - Developed Streamlit app with ATS analysis.\n  - Embedded real-time job recommendation engines.")
         experience = st.text_area("Work / Internship Experience (Optional)", "")
-        languages = st.text_area("Language Competencies", "")
-        hobbies = st.text_input("Interests / Hobbies (Optional)", "")
+        languages = st.text_area("Language Competencies", "- Telugu: Native\n- English: Fluent\n- Hindi: Conversational")
+        hobbies = st.text_input("Interests / Hobbies (Optional)", "Reading Tech Blogs, Cooking, Problem Solving")
         
         st.markdown("---")
         declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
@@ -203,14 +231,14 @@ with tab2:
         
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
 
-        # Dynamic Sections
-        obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3><p>{objective}</p>" if objective.strip() else ""
-        edu_s = f"<h3 style='color:{primary_color};'>Education</h3><p>{education}</p>" if education.strip() else ""
-        skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3><p>{skills}</p>" if skills.strip() else ""
-        crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3><p>{certifications}</p>" if certifications.strip() else ""
-        prj_s = f"<h3 style='color:{primary_color};'>Projects</h3><p>{projects}</p>" if projects.strip() else ""
-        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internships</h3><p>{experience}</p>" if experience.strip() else ""
-        lng_s = f"<h3 style='color:{primary_color};'>Language Competencies</h3><p>{languages}</p>" if languages.strip() else ""
+        # Dynamic Sections with Sub-point Formatting
+        obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3>{format_bullet_points(objective)}" if objective.strip() else ""
+        edu_s = f"<h3 style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}" if education.strip() else ""
+        skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
+        crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3>{format_bullet_points(certifications)}" if certifications.strip() else ""
+        prj_s = f"<h3 style='color:{primary_color};'>Projects</h3>{format_bullet_points(projects)}" if projects.strip() else ""
+        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internships</h3>{format_bullet_points(experience)}" if experience.strip() else ""
+        lng_s = f"<h3 style='color:{primary_color};'>Language Competencies</h3>{format_bullet_points(languages)}" if languages.strip() else ""
         hob_s = f"<h3 style='color:{primary_color};'>Interests / Hobbies</h3><p>{hobbies}</p>" if hobbies.strip() else ""
         dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
 
@@ -219,14 +247,15 @@ with tab2:
         <html>
         <head>
         <style>
-            body {{ font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #333; }}
+            @import url('https://fonts.googleapis.com/css2?family=Georgia&family=Calibri&display=swap');
+            body {{ font-family: 'Calibri', Arial, sans-serif; margin: 0; padding: 10px; color: #222; }}
             .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 25px; border-radius: 8px; }}
             .header-container {{ text-align: center; margin-bottom: 12px; background: {header_bg}; padding: 12px; border-radius: 6px; }}
-            h1 {{ color: {primary_color}; margin: 0 0 4px 0; font-size: 26px; text-transform: uppercase; letter-spacing: 0.5px; }}
+            h1 {{ font-family: 'Georgia', serif; color: {primary_color}; margin: 0 0 4px 0; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }}
             .title {{ font-size: 15px; font-weight: bold; color: {title_color}; margin-bottom: 6px; }}
             .contact {{ font-size: 12px; color: #4B5563; }}
             hr {{ border: 0; border-top: 2px solid {primary_color}; margin-bottom: 15px; }}
-            h3 {{ font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
+            h3 {{ font-family: 'Georgia', serif; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
             p {{ font-size: 12.5px; line-height: 1.4; margin: 0; white-space: pre-line; }}
             .footer-table {{ width: 100%; margin-top: 20px; font-size: 12px; color: #555; }}
             a {{ text-decoration: none; }}
