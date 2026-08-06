@@ -24,12 +24,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🚀 Smart AI Resume Hub & Live Builder")
+st.title("🚀 Smart AI Resume Hub & All-in-One Career Suite")
 
-# Navigation Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+# Navigation Tabs (All 7 Features Included)
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
     "✏️ Live Resume Builder",
+    "✨ AI Bullet Rewriter",
     "🎯 Keyword Placement & Red Flags", 
     "💰 Salary Predictor", 
     "✉️ HR Cold Outreach", 
@@ -88,6 +89,15 @@ def extract_job_title(jd_text):
             return re.sub(r'[^a-zA-Z0-9\s]', '', line).strip()
     return "Software Developer"
 
+# Helper to format URL for redirection
+def format_url(url):
+    url = url.strip()
+    if not url:
+        return ""
+    if not url.startswith("http://") and not url.startswith("https://"):
+        return "https://" + url
+    return url
+
 # Sidebar Inputs (Global)
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
@@ -100,7 +110,7 @@ jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
 extracted_jd = extract_text_from_file(jd_file)
 job_description = extracted_jd if extracted_jd.strip() != "" else jd_text_input
 
-# ==================== TAB 1: ANALYZER & JOBS ====================
+# ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
     st.subheader("📊 Match Score & Live Job Recommendations")
     if st.button("Run Full Analysis 🚀", type="primary"):
@@ -137,10 +147,11 @@ with tab1:
         else:
             st.error("Please upload/paste both Resume and Job Description in the Sidebar!")
 
-# ==================== TAB 2: LIVE RESUME BUILDER & EDITOR ====================
+# ==================== TAB 2: LIVE RESUME BUILDER ====================
 with tab2:
     st.subheader("✏️ Build & Edit Your ATS Resume")
-    st.write("Fill in your details below. Sections left empty will automatically be hidden from the final resume!")
+    
+    theme_choice = st.radio("🎨 Choose Resume Theme:", ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"], horizontal=True)
 
     b_col1, b_col2 = st.columns([1, 1])
 
@@ -151,7 +162,8 @@ with tab2:
         email = st.text_input("Email", "yourname@email.com")
         phone = st.text_input("Phone", "+91 9876543210")
         location = st.text_input("Location", "Bhimavaram, India")
-        linkedin = st.text_input("LinkedIn Profile", "linkedin.com/in/yourprofile")
+        linkedin = st.text_input("LinkedIn Profile URL", "linkedin.com/in/yourprofile")
+        github = st.text_input("GitHub Profile URL", "github.com/yourusername")
 
         st.markdown("---")
         objective = st.text_area("Career Objective", "")
@@ -164,23 +176,43 @@ with tab2:
         hobbies = st.text_input("Interests / Hobbies (Optional)", "")
         
         st.markdown("---")
-        st.markdown("#### 📜 Declaration Details")
         declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
         dec_date = st.text_input("Date", "")
 
     with b_col2:
         st.markdown("### 👁️ Live Preview")
         
-        # Build Dynamic HTML Sections
-        objective_section = f"<h3>Career Objective</h3><p>{objective}</p>" if objective.strip() else ""
-        education_section = f"<h3>Education</h3><p>{education}</p>" if education.strip() else ""
-        skills_section = f"<h3>Technical Skills</h3><p>{skills}</p>" if skills.strip() else ""
-        cert_section = f"<h3>Certifications</h3><p>{certifications}</p>" if certifications.strip() else ""
-        projects_section = f"<h3>Projects</h3><p>{projects}</p>" if projects.strip() else ""
-        exp_section = f"<h3>Experience / Internships</h3><p>{experience}</p>" if experience.strip() else ""
-        lang_section = f"<h3>Language Competencies</h3><p>{languages}</p>" if languages.strip() else ""
-        hobbies_section = f"<h3>Interests / Hobbies</h3><p>{hobbies}</p>" if hobbies.strip() else ""
-        declaration_section = f"<h3>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
+        # Theme Styles Logic
+        if theme_choice == "Modern Blue":
+            primary_color, title_color, header_bg = "#1E3A8A", "#4B5563", "transparent"
+        elif theme_choice == "Executive Gold/Black":
+            primary_color, title_color, header_bg = "#B45309", "#1F2937", "#FFFBEB"
+        else: # Minimal Dark Header
+            primary_color, title_color, header_bg = "#0F172A", "#64748B", "#F8FAFC"
+
+        # Format Profile URLs for Redirection
+        linkedin_url = format_url(linkedin)
+        github_url = format_url(github)
+
+        # Build Clickable Contact Header Links
+        contact_items = [f"📍 {location}", f"📞 {phone}", f"📧 {email}"]
+        if linkedin.strip():
+            contact_items.append(f"🌐 <a href='{linkedin_url}' target='_blank' style='color:{primary_color}; font-weight:bold; text-decoration: underline;'>LinkedIn</a>")
+        if github.strip():
+            contact_items.append(f"💻 <a href='{github_url}' target='_blank' style='color:{primary_color}; font-weight:bold; text-decoration: underline;'>GitHub</a>")
+        
+        contact_html = " &nbsp;|&nbsp; ".join(contact_items)
+
+        # Dynamic Sections
+        obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3><p>{objective}</p>" if objective.strip() else ""
+        edu_s = f"<h3 style='color:{primary_color};'>Education</h3><p>{education}</p>" if education.strip() else ""
+        skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3><p>{skills}</p>" if skills.strip() else ""
+        crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3><p>{certifications}</p>" if certifications.strip() else ""
+        prj_s = f"<h3 style='color:{primary_color};'>Projects</h3><p>{projects}</p>" if projects.strip() else ""
+        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internships</h3><p>{experience}</p>" if experience.strip() else ""
+        lng_s = f"<h3 style='color:{primary_color};'>Language Competencies</h3><p>{languages}</p>" if languages.strip() else ""
+        hob_s = f"<h3 style='color:{primary_color};'>Interests / Hobbies</h3><p>{hobbies}</p>" if hobbies.strip() else ""
+        dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
 
         html_resume = f"""
         <!DOCTYPE html>
@@ -189,14 +221,15 @@ with tab2:
         <style>
             body {{ font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #333; }}
             .resume-card {{ background: #fff; border: 1px solid #ddd; padding: 25px; border-radius: 8px; }}
-            .header-container {{ text-align: center; margin-bottom: 10px; }}
-            h1 {{ color: #1E3A8A; margin: 0 0 4px 0; font-size: 26px; text-transform: uppercase; letter-spacing: 0.5px; }}
-            .title {{ font-size: 15px; font-weight: bold; color: #4B5563; margin-bottom: 6px; }}
-            .contact {{ font-size: 12px; color: #4B5563; margin-bottom: 8px; }}
-            hr {{ border: 0; border-top: 2px solid #1E3A8A; margin-bottom: 15px; }}
-            h3 {{ color: #1E3A8A; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
+            .header-container {{ text-align: center; margin-bottom: 12px; background: {header_bg}; padding: 12px; border-radius: 6px; }}
+            h1 {{ color: {primary_color}; margin: 0 0 4px 0; font-size: 26px; text-transform: uppercase; letter-spacing: 0.5px; }}
+            .title {{ font-size: 15px; font-weight: bold; color: {title_color}; margin-bottom: 6px; }}
+            .contact {{ font-size: 12px; color: #4B5563; }}
+            hr {{ border: 0; border-top: 2px solid {primary_color}; margin-bottom: 15px; }}
+            h3 {{ font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-top: 14px; margin-bottom: 6px; }}
             p {{ font-size: 12.5px; line-height: 1.4; margin: 0; white-space: pre-line; }}
             .footer-table {{ width: 100%; margin-top: 20px; font-size: 12px; color: #555; }}
+            a {{ text-decoration: none; }}
         </style>
         </head>
         <body>
@@ -204,19 +237,11 @@ with tab2:
                 <div class="header-container">
                     <h1>{full_name}</h1>
                     <div class="title">{title}</div>
-                    <div class="contact">📍 {location} &nbsp;|&nbsp; 📞 {phone} &nbsp;|&nbsp; 📧 {email} &nbsp;|&nbsp; 🌐 {linkedin}</div>
+                    <div class="contact">{contact_html}</div>
                 </div>
                 <hr>
                 
-                {objective_section}
-                {education_section}
-                {skills_section}
-                {cert_section}
-                {projects_section}
-                {exp_section}
-                {lang_section}
-                {hobbies_section}
-                {declaration_section}
+                {obj_s} {edu_s} {skl_s} {crt_s} {prj_s} {exp_s} {lng_s} {hob_s} {dec_s}
                 
                 <table class="footer-table">
                     <tr>
@@ -243,8 +268,24 @@ with tab2:
             use_container_width=True
         )
 
-# ==================== TAB 3: SMART PLACEMENT & RED FLAGS ====================
+# ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
+    st.subheader("✨ Action-Oriented Bullet Point Improver")
+    st.write("Type a basic bullet point below to generate high-impact ATS alternatives:")
+    
+    raw_bullet = st.text_input("Enter a simple project line:", "I made a python app for analysis")
+    
+    if st.button("Enhance Bullet Point ✨"):
+        if raw_bullet.strip():
+            st.markdown("### 🌟 Suggested Action-Oriented Options:")
+            st.info("👉 **Option 1 (Metric Focused):** 'Architected and deployed a Python application, improving data processing and operational efficiency by 25%.'")
+            st.success("👉 **Option 2 (Action Focused):** 'Spearheaded the design and implementation of an end-to-end Python pipeline to analyze key metrics.'")
+            st.warning("👉 **Option 3 (Technical Focus):** 'Engineered a high-performance Python application utilizing optimized data structures for real-time analysis.'")
+        else:
+            st.warning("Please enter a sentence first!")
+
+# ==================== TAB 4: SMART PLACEMENT & RED FLAGS ====================
+with tab4:
     st.subheader("💡 ATS Keyword Placement & Red Flag Detector")
     if resume_text.strip() != "" and job_description.strip() != "":
         missing = get_missing_keywords(resume_text, job_description)
@@ -269,8 +310,8 @@ with tab3:
     else:
         st.info("Upload Resume & JD in Sidebar to see Placement Suggestions!")
 
-# ==================== TAB 4: SALARY PREDICTOR ====================
-with tab4:
+# ==================== TAB 5: SALARY PREDICTOR ====================
+with tab5:
     st.subheader("💰 Market Experience & Salary Range Predictor")
     if job_description.strip() != "":
         target_role = extract_job_title(job_description)
@@ -286,8 +327,8 @@ with tab4:
     else:
         st.info("Upload Job Description in Sidebar to Predict Salary Range!")
 
-# ==================== TAB 5: HR COLD OUTREACH ====================
-with tab5:
+# ==================== TAB 6: HR COLD OUTREACH ====================
+with tab6:
     st.subheader("✉️ HR Cold Email & LinkedIn Message Generator")
     if resume_text.strip() != "" and job_description.strip() != "":
         target_role = extract_job_title(job_description)
@@ -302,8 +343,8 @@ with tab5:
     else:
         st.info("Upload Resume & JD in Sidebar to Generate Outreach Messages!")
 
-# ==================== TAB 6: MOCK INTERVIEW ====================
-with tab6:
+# ==================== TAB 7: MOCK INTERVIEW ====================
+with tab7:
     st.subheader("🎤 AI Technical Mock Interview Practice")
     if job_description.strip() != "":
         target_role = extract_job_title(job_description)
