@@ -1,6 +1,7 @@
 # 🚀 Smart AI Resume Hub
 
 An all-in-one **Streamlit career assistant** that helps users analyze, build, and optimize resumes while preparing for job applications.
+link : https://resume-for-all-cuvrnyjcsnwdpdlcmb7sxj.streamlit.app/
 
 ## ✨ Features
 
