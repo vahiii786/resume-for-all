@@ -336,44 +336,90 @@ def generate_docx_resume(name, title, contact_line, objective, skills, experienc
     buf.seek(0)
     return buf.getvalue()
 
-def generate_pdf_resume(name, title, contact_line, objective, skills, experience, projects,
-                         education, certifications, languages, declaration, dec_date, loc):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 18)
-    pdf.multi_cell(0, 10, name, align='C')
-    pdf.set_font("Helvetica", "", 12)
-    pdf.multi_cell(0, 8, title, align='C')
-    pdf.set_font("Helvetica", "", 10)
-    pdf.multi_cell(0, 6, contact_line, align='C')
-    pdf.ln(4)
+def generate_pdf_resume(
+    p_name,
+    p_title,
+    contact_plain,
+    objective,
+    skills,
+    experience,
+    projects,
+    education,
+    certifications,
+    languages,
+    declaration,
+    dec_date,
+    p_loc,
+):
+    try:
+        pdf = FPDF(format="A4", unit="mm")
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
 
-    for heading_text, content in build_section_list(objective, skills, experience, projects, education, certifications, languages):
-        if content.strip():
-            pdf.set_font("Helvetica", "B", 13)
-            pdf.cell(0, 8, heading_text, ln=True)
-            pdf.set_font("Helvetica", "", 10)
-            for line in content.strip().split('\n'):
-                line = line.strip()
-                if not line:
-                    continue
-                bullet_prefix = "• " if line.startswith(('-', '*', '•')) else ""
-                clean_line = line.lstrip('-*• ').strip()
-                pdf.multi_cell(0, 6, bullet_prefix + clean_line)
+        # 1. Margins ని పక్కాగా సెట్ చేయాలి
+        pdf.set_margins(15, 15, 15)
+
+        # 2. Page Printable Width క్యాలిక్యులేట్ చేయాలి (A4 Width 210mm - 30mm Margins = 180mm)
+        page_width = pdf.w - pdf.l_margin - pdf.r_margin
+
+        # Text Clean Helper Function (Unicode support)
+        def clean_txt(txt):
+            if not txt:
+                return ""
+            return str(txt).encode("latin-1", "ignore").decode("latin-1")
+
+        # Header Section
+        pdf.set_font("Arial", "B", 16)
+        pdf.multi_cell(page_width, 8, clean_txt(p_name), align="C")
+
+        if p_title:
+            pdf.set_font("Arial", "B", 11)
+            pdf.multi_cell(page_width, 6, clean_txt(p_title), align="C")
+
+        if contact_plain:
+            pdf.set_font("Arial", "", 9)
+            pdf.multi_cell(page_width, 5, clean_txt(contact_plain), align="C")
+
+        pdf.ln(4)
+
+        # Content Sections Helper
+        def add_section(title_str, content_str):
+            if not content_str or not content_str.strip():
+                return
+            pdf.set_font("Arial", "B", 11)
+            pdf.cell(page_width, 6, clean_txt(title_str.upper()), ln=True)
+            pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + page_width, pdf.get_y())
             pdf.ln(2)
 
-    if declaration.strip():
-        pdf.set_font("Helvetica", "B", 13)
-        pdf.cell(0, 8, "Declaration", ln=True)
-        pdf.set_font("Helvetica", "", 10)
-        pdf.multi_cell(0, 6, declaration)
-        pdf.multi_cell(0, 6, f"Date: {dec_date}    Location: {loc}    Signature: {name}")
+            pdf.set_font("Arial", "", 10)
+            pdf.multi_cell(page_width, 5, clean_txt(content_str))
+            pdf.ln(3)
 
-    raw = pdf.output()
-    if isinstance(raw, str):
-        raw = raw.encode('latin-1')
-    return bytes(raw)
+        # Dynamic Section Rendering
+        add_section("Career Objective", objective)
+        add_section("Technical Skills", skills)
+        add_section("Work Experience", experience)
+        add_section("Projects", projects)
+        add_section("Education", education)
+        add_section("Certifications", certifications)
+        add_section("Languages", languages)
 
+        if declaration:
+            add_section("Declaration", declaration)
+
+        # Footer Details
+        if dec_date or p_loc:
+            pdf.ln(3)
+            pdf.set_font("Arial", "", 9)
+            footer_txt = f"Location: {p_loc} | Date: {dec_date}"
+            pdf.multi_cell(page_width, 5, clean_txt(footer_txt))
+
+        # Output bytes array
+        return bytes(pdf.output())
+
+    except Exception as e:
+        # Crash అవ్వకుండా ప్లెయిన్ ఎర్రర్ టెక్స్ట్ రిటర్న్ చేస్తుంది
+        return f"PDF Generation Error: {str(e)}".encode("utf-8")
 # Sidebar Inputs
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
