@@ -440,17 +440,177 @@ st.sidebar.divider()
 # Optional JD Toggle
 has_jd = st.sidebar.radio("Do you have a Job Description (JD) to match?", ["No (Check General Resume Score)", "Yes (Compare with Job Description)"])
 
+# ------------ SIDEBAR: JOB DESCRIPTION SECTION ------------
+has_jd = st.sidebar.radio(
+    "Job Description ఉందా?",
+    ("No (General Resume Review)", "Yes (Compare with Job Description)"),
+)
+
 job_description = ""
+
 if has_jd == "Yes (Compare with Job Description)":
-    jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
-    jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
+    st.sidebar.markdown("---")
 
-    extracted_jd = extract_text_from_file(jd_file)
-    job_description = extracted_jd if extracted_jd != "" else jd_text_input
+    # 💡 AUTO-GENERATE JD FEATURE
+    if resume_text.strip():
+        st.sidebar.subheader("✨ AI JD Generator")
 
-    if jd_file and extracted_jd != "":
-        st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
-        
+        # 1. Resume ని బట్టి Target Domains / Roles ని ఆటోమేటిక్‌గా గుర్తించడం
+        resume_lower = resume_text.lower()
+        suggested_roles = []
+
+        if (
+            "data" in resume_lower
+            or "analyst" in resume_lower
+            or "sql" in resume_lower
+        ):
+            suggested_roles.extend(
+                [
+                    "Data Analyst",
+                    "Senior Data Analyst",
+                    "Business Intelligence (BI) Analyst",
+                    "Data Engineer",
+                ]
+            )
+        if "python" in resume_lower or "developer" in resume_lower:
+            suggested_roles.extend(
+                [
+                    "Python Developer",
+                    "Backend Engineer",
+                    "Software Development Engineer (SDE)",
+                ]
+            )
+        if (
+            "machine learning" in resume_lower
+            or "data science" in resume_lower
+            or "ai" in resume_lower
+        ):
+            suggested_roles.extend(
+                ["Data Scientist", "Machine Learning Engineer", "AI Engineer"]
+            )
+        if (
+            "web" in resume_lower
+            or "react" in resume_lower
+            or "html" in resume_lower
+        ):
+            suggested_roles.extend(
+                ["Frontend Developer", "Full Stack Developer"]
+            )
+
+        # Default fallback roles
+        if not suggested_roles:
+            suggested_roles = [
+                "Software Engineer",
+                "Data Analyst",
+                "Business Analyst",
+                "Project Manager",
+            ]
+
+        # డ్యూప్లికేట్స్ లేకుండా యూనిక్ లిస్ట్ చేయడం
+        suggested_roles = list(dict.fromkeys(suggested_roles))
+        suggested_roles.insert(0, "-- రికమండ్ చేసిన జాబ్ రోల్‌ని ఎంచుకోండి --")
+
+        selected_domain = st.sidebar.selectbox(
+            "🎯 మీ Resume బట్టి సరిపోయే జాబ్ ప్రొఫైల్స్:",
+            suggested_roles,
+            key="jd_domain_selectbox",
+        )
+
+        # 2. యూజర్ రోల్ ఎంచుకున్నప్పుడు ఆటోమేటిక్‌గా Perfect Template JD ని సిద్ధం చేయడం
+        auto_jd_text = ""
+        if (
+            selected_domain
+            and selected_domain != "-- రికమండ్ చేసిన జాబ్ రోల్‌ని ఎంచుకోండి --"
+        ):
+
+            if selected_domain in [
+                "Data Analyst",
+                "Senior Data Analyst",
+                "Business Intelligence (BI) Analyst",
+            ]:
+                auto_jd_text = """Job Title: Data Analyst
+Key Responsibilities:
+- Collect, clean, and analyze complex datasets using Python, SQL, and Excel.
+- Build interactive dashboards and reports using Tableau, Power BI, or Streamlit.
+- Perform exploratory data analysis (EDA) and statistical analysis to derive actionable insights.
+- Collaborate with cross-functional teams to understand business requirements and deliver metrics.
+- Maintain data pipelines and ensure data accuracy and integrity.
+
+Required Qualifications & Skills:
+- Proficiency in Python, Pandas, NumPy, and SQL.
+- Strong experience with Data Visualization tools (Tableau, Power BI, or Plotly).
+- Knowledge of Data Cleaning, Preprocessing, and ETL processes.
+- Good communication and analytical problem-solving skills."""
+
+            elif selected_domain in [
+                "Python Developer",
+                "Backend Engineer",
+                "Software Development Engineer (SDE)",
+            ]:
+                auto_jd_text = """Job Title: Python Developer / Backend Engineer
+Key Responsibilities:
+- Design, develop, and maintain efficient, reusable, and reliable Python code.
+- Integration of user-facing elements with server-side logic using APIs and frameworks (Flask, Django, FastAPI).
+- Write complex database queries and optimize database performance (SQL, PostgreSQL, MongoDB).
+- Implement security and data protection solutions.
+- Collaborate with front-end developers to integrate pipeline components.
+
+Required Qualifications & Skills:
+- Strong proficiency in Python, Data Structures, and Algorithms.
+- Experience with web frameworks (Flask, Django, or FastAPI) and RESTful APIs.
+- Hands-on experience with SQL databases and Git version control.
+- Familiarity with deployment, Docker, or Cloud services (AWS/GCP)."""
+
+            elif selected_domain in [
+                "Data Scientist",
+                "Machine Learning Engineer",
+                "AI Engineer",
+            ]:
+                auto_jd_text = """Job Title: Data Scientist / ML Engineer
+Key Responsibilities:
+- Develop predictive models and machine learning algorithms using Python and Scikit-Learn.
+- Process, clean, and verify the integrity of data used for analysis.
+- Feature engineering, model evaluation, and tuning for optimal performance.
+- Deploy ML models as web APIs or Streamlit applications.
+- Present findings and technical insights to stakeholders using effective visualizations.
+
+Required Qualifications & Skills:
+- Expertise in Python, NumPy, Pandas, Scikit-Learn, and TensorFlow/PyTorch.
+- Strong understanding of Machine Learning algorithms (Regression, Classification, Clustering).
+- Proficiency in SQL and exploratory data analysis.
+- Experience with model deployment and Git."""
+
+            else:
+                auto_jd_text = f"""Job Title: {selected_domain}
+Key Responsibilities:
+- Execute domain-specific technical and analytical operations with precision.
+- Collaborate with team members to deliver high-quality project deliverables.
+- Use core tools, Python/SQL technologies, and analytical frameworks for problem-solving.
+- Maintain documentation, version control, and process workflows.
+
+Required Qualifications & Skills:
+- Relevant educational background in Computer Science, Data Science, or related field.
+- Proficiency in Python, Problem Solving, Data Analysis, and Communication.
+- Hands-on experience with tools like Git, Excel, and relevant technical frameworks."""
+
+            st.sidebar.success(
+                f"✅ '{selected_domain}' రికమండెడ్ JD సిద్ధమైంది!"
+            )
+
+        # Job Description Text Area (Auto-filled if generated, or editable by user)
+        job_description = st.sidebar.text_area(
+            "Job Description (JD)",
+            value=auto_jd_text,
+            height=200,
+            placeholder="ఇక్కడ Job Description పేస్ట్ చేయండి లేదా పైన డ్రాప్‌డౌన్ నుండి ఆటో-జనరేట్ చేసుకోండి...",
+        )
+    else:
+        st.sidebar.info("💡 JD ఆటో-జనరేషన్ సూచనల కోసం మొదట మీ Resume ని అప్‌లోడ్ చేయండి.")
+        job_description = st.sidebar.text_area(
+            "Job Description (JD)",
+            height=200,
+            placeholder="ఇక్కడ Job Description పేస్ట్ చేయండి...",
+        )
 # General Resume Quality Calculator (When NO JD is provided)
 def calculate_general_resume_score(text):
     score = 0
