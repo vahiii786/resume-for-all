@@ -531,91 +531,244 @@ with tab1:
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
     st.subheader("✏️ Resume Upload & Interactive Editor")
-    st.write("Upload your resume and click the button below — all details will automatically load into the boxes below, where you can easily modify them.")
-    
-    # Session State Initialization for Smart Auto-Fill
-    if "ed_name" not in st.session_state: st.session_state["ed_name"] = ""
-    if "ed_title" not in st.session_state: st.session_state["ed_title"] = ""
-    if "ed_email" not in st.session_state: st.session_state["ed_email"] = ""
-    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = ""
-    if "ed_loc" not in st.session_state: st.session_state["ed_loc"] = ""
-    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = ""
-    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = ""
-    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = ""
-    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = ""
-    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = ""
-    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = ""
+    st.write(
+        "Upload your resume and click the button below — all details will"
+        " automatically load into the boxes below, where you can easily modify"
+        " them."
+    )
 
-    # 1. File Upload Section
-    uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
-    
+    # 1. Session State Initialization
+    default_keys = {
+        "ed_name": "",
+        "ed_title": "",
+        "ed_email": "",
+        "ed_phone": "",
+        "ed_loc": "",
+        "ed_obj": "",
+        "ed_skills": "",
+        "ed_exp": "",
+        "ed_proj": "",
+        "ed_edu": "",
+        "ed_cert": "",
+        "ed_linkedin": "",
+        "ed_github": "",
+        "ed_lang": "- English\n- Telugu",
+        "ed_dec": (
+            "I hereby declare that all information provided is accurate to the"
+            " best of my knowledge."
+        ),
+        "ed_date": "",
+    }
+
+    for key, val in default_keys.items():
+        if key not in st.session_state:
+            st.session_state[key] = val
+
+    # 2. File Upload Section
+    uploaded_edit_file = st.file_uploader(
+        "📂 Upload Resume to Edit (.pdf, .docx, .txt)",
+        type=["pdf", "docx", "txt"],
+        key="editor_file",
+    )
+
     if uploaded_edit_file is not None:
-        if st.button("📥 Parse & Load Resume into Editor Boxes", type="primary"):
+        if st.button(
+            "📥 Parse & Load Resume into Editor Boxes", type="primary"
+        ):
             extracted_raw = extract_text_from_file(uploaded_edit_file)
             if extracted_raw:
-                lines = [line.strip() for line in extracted_raw.split('\n') if line.strip()]
-                
+                lines = [
+                    line.strip()
+                    for line in extracted_raw.split("\n")
+                    if line.strip()
+                ]
+
                 # Simple Smart Parsing Logic
-                # Name (Usually first non-empty line)
                 if lines:
                     st.session_state["ed_name"] = lines[0]
-                
-                # Email Extraction Regex/Check
-                emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', extracted_raw)
-                if emails: st.session_state["ed_email"] = emails[0]
-                
-                # Phone Number Extraction Regex/Check
-                phones = re.findall(r'[\+\(]?[0-9][0-9\-\s\(\)]{8,}[0-9]', extracted_raw)
-                if phones: st.session_state["ed_phone"] = phones[0]
 
-                # Section Extraction Logic based on Headings (uses the shared get_section_text helper)
-                parsed_obj = get_section_text(extracted_raw, ['objective', 'summary', 'profile'])
-                parsed_skills = get_section_text(extracted_raw, ['skills', 'technical skills', 'technologies'])
-                parsed_exp = get_section_text(extracted_raw, ['experience', 'work experience', 'employment', 'internship'])
-                parsed_proj = get_section_text(extracted_raw, ['projects', 'academic projects'])
-                parsed_edu = get_section_text(extracted_raw, ['education', 'qualification', 'academic background'])
-                parsed_cert = get_section_text(extracted_raw, ['certifications', 'certificates'])
+                # Email Extraction
+                emails = re.findall(
+                    r"[\w\.-]+@[\w\.-]+\.\w+", extracted_raw
+                )
+                if emails:
+                    st.session_state["ed_email"] = emails[0]
 
-                if parsed_obj: st.session_state["ed_obj"] = parsed_obj
-                if parsed_skills: st.session_state["ed_skills"] = parsed_skills
-                if parsed_exp: st.session_state["ed_exp"] = parsed_exp
-                else: st.session_state["ed_exp"] = extracted_raw  # Fallback to full raw text if sections fail
-                if parsed_proj: st.session_state["ed_proj"] = parsed_proj
-                if parsed_edu: st.session_state["ed_edu"] = parsed_edu
-                if parsed_cert: st.session_state["ed_cert"] = parsed_cert
+                # Phone Number Extraction
+                phones = re.findall(
+                    r"[\+\(]?[0-9][0-9\-\s\(\)]{8,}[0-9]", extracted_raw
+                )
+                if phones:
+                    st.session_state["ed_phone"] = phones[0]
 
-                st.success("✅ Resume details loaded & filled into editor boxes! You can edit them below.")
+                # Section Extraction Logic
+                parsed_obj = get_section_text(
+                    extracted_raw, ["objective", "summary", "profile"]
+                )
+                parsed_skills = get_section_text(
+                    extracted_raw,
+                    ["skills", "technical skills", "technologies"],
+                )
+                parsed_exp = get_section_text(
+                    extracted_raw,
+                    [
+                        "experience",
+                        "work experience",
+                        "employment",
+                        "internship",
+                    ],
+                )
+                parsed_proj = get_section_text(
+                    extracted_raw, ["projects", "academic projects"]
+                )
+                parsed_edu = get_section_text(
+                    extracted_raw,
+                    ["education", "qualification", "academic background"],
+                )
+                parsed_cert = get_section_text(
+                    extracted_raw, ["certifications", "certificates"]
+                )
+
+                st.session_state["ed_obj"] = parsed_obj if parsed_obj else ""
+                st.session_state["ed_skills"] = (
+                    parsed_skills if parsed_skills else ""
+                )
+                st.session_state["ed_exp"] = (
+                    parsed_exp if parsed_exp else extracted_raw
+                )
+                st.session_state["ed_proj"] = parsed_proj if parsed_proj else ""
+                st.session_state["ed_edu"] = parsed_edu if parsed_edu else ""
+                st.session_state["ed_cert"] = parsed_cert if parsed_cert else ""
+
+                st.success(
+                    "✅ Resume details loaded & filled into editor boxes! You"
+                    " can edit them below."
+                )
+                st.rerun()
             else:
-                st.error("Could not extract text from this file. Please make sure it's a readable PDF or DOCX file.")
+                st.error(
+                    "Could not extract text from this file. Please make sure"
+                    " it's a readable PDF or DOCX file."
+                )
 
     st.divider()
 
-    theme_choice = st.radio("🎨 Choose Resume Theme:", ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"], horizontal=True)
+    theme_choice = st.radio(
+        "🎨 Choose Resume Theme:",
+        ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"],
+        horizontal=True,
+    )
 
     b_col1, b_col2 = st.columns([1, 1])
 
     with b_col1:
         st.markdown("### 📝 Edit Resume Sections")
-        
-        # Text Inputs with Auto-Filled Values from Uploaded File
-        full_name = st.text_input("Full Name", value=st.session_state["ed_name"], placeholder="e.g., John Doe")
-        title = st.text_input("Professional Title", value=st.session_state["ed_title"], placeholder="e.g., Software Engineer")
-        email = st.text_input("Email", value=st.session_state["ed_email"], placeholder="e.g., johndoe@example.com")
-        phone = st.text_input("Phone Number", value=st.session_state["ed_phone"], placeholder="e.g., +91 9876543210")
-        location = st.text_input("Location", value=st.session_state["ed_loc"], placeholder="e.g., Hyderabad, India")
-        linkedin = st.text_input("LinkedIn Profile URL", value="", placeholder="https://www.linkedin.com/in/yourprofile")
-        github = st.text_input("GitHub Profile URL", value="", placeholder="https://github.com/yourusername")
+
+        # Text Inputs bound directly to key state
+        full_name = st.text_input(
+            "Full Name",
+            value=st.session_state["ed_name"],
+            key="input_name",
+            placeholder="e.g., John Doe",
+        )
+        title = st.text_input(
+            "Professional Title",
+            value=st.session_state["ed_title"],
+            key="input_title",
+            placeholder="e.g., Software Engineer",
+        )
+        email = st.text_input(
+            "Email",
+            value=st.session_state["ed_email"],
+            key="input_email",
+            placeholder="e.g., johndoe@example.com",
+        )
+        phone = st.text_input(
+            "Phone Number",
+            value=st.session_state["ed_phone"],
+            key="input_phone",
+            placeholder="e.g., +91 9876543210",
+        )
+        location = st.text_input(
+            "Location",
+            value=st.session_state["ed_loc"],
+            key="input_loc",
+            placeholder="e.g., Hyderabad, India",
+        )
+        linkedin = st.text_input(
+            "LinkedIn Profile URL",
+            value=st.session_state["ed_linkedin"],
+            key="input_linkedin",
+            placeholder="https://www.linkedin.com/in/yourprofile",
+        )
+        github = st.text_input(
+            "GitHub Profile URL",
+            value=st.session_state["ed_github"],
+            key="input_github",
+            placeholder="https://github.com/yourusername",
+        )
 
         st.markdown("---")
-        objective = st.text_area("Edit Objective / Summary", value=st.session_state["ed_obj"], placeholder="Career objective or summary...", height=90)
-        skills = st.text_area("Edit Skills", value=st.session_state["ed_skills"], placeholder="- Python, SQL, Streamlit...", height=110)
-        experience = st.text_area("Edit Work / Internship Experience", value=st.session_state["ed_exp"], placeholder="Work experience details...", height=150)
-        projects = st.text_area("Edit Projects", value=st.session_state["ed_proj"], placeholder="Project details...", height=120)
-        education = st.text_area("Edit Education", value=st.session_state["ed_edu"], placeholder="Degree | College Name...", height=100)
-        certifications = st.text_area("Edit Certifications (Optional)", value=st.session_state["ed_cert"], placeholder="Certifications...", height=80)
-        languages = st.text_area("Languages Spoken", value="- English\n- Telugu", height=70)
-        declaration = st.text_area("Declaration Statement", value="I hereby declare that all information provided is accurate to the best of my knowledge.", height=70)
-        dec_date = st.text_input("Date", value="", placeholder="DD/MM/YYYY")
+        objective = st.text_area(
+            "Edit Objective / Summary",
+            value=st.session_state["ed_obj"],
+            key="input_obj",
+            placeholder="Career objective or summary...",
+            height=90,
+        )
+        skills = st.text_area(
+            "Edit Skills",
+            value=st.session_state["ed_skills"],
+            key="input_skills",
+            placeholder="- Python, SQL, Streamlit...",
+            height=110,
+        )
+        experience = st.text_area(
+            "Edit Work / Internship Experience",
+            value=st.session_state["ed_exp"],
+            key="input_exp",
+            placeholder="Work experience details...",
+            height=150,
+        )
+        projects = st.text_area(
+            "Edit Projects",
+            value=st.session_state["ed_proj"],
+            key="input_proj",
+            placeholder="Project details...",
+            height=120,
+        )
+        education = st.text_area(
+            "Edit Education",
+            value=st.session_state["ed_edu"],
+            key="input_edu",
+            placeholder="Degree | College Name...",
+            height=100,
+        )
+        certifications = st.text_area(
+            "Edit Certifications (Optional)",
+            value=st.session_state["ed_cert"],
+            key="input_cert",
+            placeholder="Certifications...",
+            height=80,
+        )
+        languages = st.text_area(
+            "Languages Spoken",
+            value=st.session_state["ed_lang"],
+            key="input_lang",
+            height=70,
+        )
+        declaration = st.text_area(
+            "Declaration Statement",
+            value=st.session_state["ed_dec"],
+            key="input_dec",
+            height=70,
+        )
+        dec_date = st.text_input(
+            "Date",
+            value=st.session_state["ed_date"],
+            key="input_date",
+            placeholder="DD/MM/YYYY",
+        )
 
         # Fallbacks for live preview display
         p_name = full_name if full_name.strip() else "Your Full Name"
@@ -624,31 +777,54 @@ with tab2:
         p_phone = phone if phone.strip() else "+91 9876543210"
         p_loc = location if location.strip() else "City, Country"
 
-        # Sync edited content with Tab 1 (Analyzer)
+        # Sync edited content with Tab 1
         edited_full_text = f"{p_name}\n{p_title}\n{objective}\n{skills}\n{experience}\n{projects}\n{education}\n{certifications}"
         if st.button("🔄 Sync Edited Resume with Analyzer"):
             st.session_state["built_resume_text"] = edited_full_text
-            st.success("✅ Changes synced! Go to Tab 1 to check ATS score of this updated resume.")
+            st.success(
+                "✅ Changes synced! Go to Tab 1 to check ATS score of this"
+                " updated resume."
+            )
 
     with b_col2:
         st.markdown("### 👁️ Live Updated Preview")
-        
+
         if theme_choice == "Modern Blue":
-            primary_color, title_color, header_bg = "#1E3A8A", "#4B5563", "transparent"
+            primary_color, title_color, header_bg = (
+                "#1E3A8A",
+                "#4B5563",
+                "transparent",
+            )
         elif theme_choice == "Executive Gold/Black":
-            primary_color, title_color, header_bg = "#B45309", "#1F2937", "#FFFBEB"
+            primary_color, title_color, header_bg = (
+                "#B45309",
+                "#1F2937",
+                "#FFFBEB",
+            )
         else:
-            primary_color, title_color, header_bg = "#0F172A", "#64748B", "#F8FAFC"
+            primary_color, title_color, header_bg = (
+                "#0F172A",
+                "#64748B",
+                "#F8FAFC",
+            )
 
         linkedin_url = format_url(linkedin) if linkedin.strip() else ""
         github_url = format_url(github) if github.strip() else ""
 
         contact_items = [f"📍 {p_loc}", f"📞 {p_phone}", f"📧 {p_email}"]
         if linkedin_url:
-            contact_items.append(f"<a href='{linkedin_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{linkedin.strip()}</a>")
+            contact_items.append(
+                f"<a href='{linkedin_url}' target='_blank'"
+                f" style='color:{primary_color}; text-decoration:"
+                f" underline;'>{linkedin.strip()}</a>"
+            )
         if github_url:
-            contact_items.append(f"<a href='{github_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{github.strip()}</a>")
-        
+            contact_items.append(
+                f"<a href='{github_url}' target='_blank'"
+                f" style='color:{primary_color}; text-decoration:"
+                f" underline;'>{github.strip()}</a>"
+            )
+
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
         contact_plain = f"{p_loc} | {p_phone} | {p_email}"
         if linkedin.strip():
@@ -656,14 +832,54 @@ with tab2:
         if github.strip():
             contact_plain += f" | {github.strip()}"
 
-        obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3>{format_bullet_points(objective)}" if objective.strip() else ""
-        edu_s = f"<h3 style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}" if education.strip() else ""
-        skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
-        crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3>{format_bullet_points(certifications)}" if certifications.strip() else ""
-        prj_s = f"<h3 style='color:{primary_color};'>Projects</h3>{format_bullet_points(projects)}" if projects.strip() else ""
-        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internship</h3>{format_bullet_points(experience)}" if experience.strip() else ""
-        lng_s = f"<h3 style='color:{primary_color};'>Languages Spoken</h3>{format_bullet_points(languages)}" if languages.strip() else ""
-        dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
+        obj_s = (
+            f"<h3 style='color:{primary_color};'>Career"
+            f" Objective</h3>{format_bullet_points(objective)}"
+            if objective.strip()
+            else ""
+        )
+        edu_s = (
+            f"<h3"
+            f" style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}"
+            if education.strip()
+            else ""
+        )
+        skl_s = (
+            f"<h3 style='color:{primary_color};'>Technical"
+            f" Skills</h3>{format_bullet_points(skills)}"
+            if skills.strip()
+            else ""
+        )
+        crt_s = (
+            f"<h3"
+            f" style='color:{primary_color};'>Certifications</h3>{format_bullet_points(certifications)}"
+            if certifications.strip()
+            else ""
+        )
+        prj_s = (
+            f"<h3"
+            f" style='color:{primary_color};'>Projects</h3>{format_bullet_points(projects)}"
+            if projects.strip()
+            else ""
+        )
+        exp_s = (
+            f"<h3 style='color:{primary_color};'>Experience /"
+            f" Internship</h3>{format_bullet_points(experience)}"
+            if experience.strip()
+            else ""
+        )
+        lng_s = (
+            f"<h3 style='color:{primary_color};'>Languages"
+            f" Spoken</h3>{format_bullet_points(languages)}"
+            if languages.strip()
+            else ""
+        )
+        dec_s = (
+            f"<h3"
+            f" style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>"
+            if declaration.strip()
+            else ""
+        )
 
         html_resume = f"""
         <!DOCTYPE html>
@@ -712,7 +928,7 @@ with tab2:
         st.markdown(html_resume, unsafe_allow_html=True)
         st.write("")
 
-        # ---- Export row: HTML (existing) + NEW DOCX + NEW PDF ----
+        # Export Options
         exp_col1, exp_col2, exp_col3 = st.columns(3)
 
         with exp_col1:
@@ -722,55 +938,103 @@ with tab2:
                 file_name=f"{p_name.replace(' ', '_')}_Resume.html",
                 mime="text/html",
                 type="primary",
-                use_container_width=True
+                use_container_width=True,
             )
 
         with exp_col2:
-            if docx_available:
+            if "docx_available" in globals() and docx_available:
                 docx_bytes = generate_docx_resume(
-                    p_name, p_title, contact_plain, objective, skills, experience,
-                    projects, education, certifications, languages, declaration, dec_date, p_loc
+                    p_name,
+                    p_title,
+                    contact_plain,
+                    objective,
+                    skills,
+                    experience,
+                    projects,
+                    education,
+                    certifications,
+                    languages,
+                    declaration,
+                    dec_date,
+                    p_loc,
                 )
                 st.download_button(
                     label="📄 Download DOCX",
                     data=docx_bytes,
                     file_name=f"{p_name.replace(' ', '_')}_Resume.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    ),
+                    use_container_width=True,
                 )
             else:
-                st.button("📄 DOCX (install python-docx)", disabled=True, use_container_width=True)
+                st.button(
+                    "📄 DOCX (install python-docx)",
+                    disabled=True,
+                    use_container_width=True,
+                )
 
         with exp_col3:
-            if fpdf_available:
+            if "fpdf_available" in globals() and fpdf_available:
                 pdf_bytes = generate_pdf_resume(
-                    p_name, p_title, contact_plain, objective, skills, experience,
-                    projects, education, certifications, languages, declaration, dec_date, p_loc
+                    p_name,
+                    p_title,
+                    contact_plain,
+                    objective,
+                    skills,
+                    experience,
+                    projects,
+                    education,
+                    certifications,
+                    languages,
+                    declaration,
+                    dec_date,
+                    p_loc,
                 )
                 st.download_button(
                     label="🧾 Download PDF",
                     data=pdf_bytes,
                     file_name=f"{p_name.replace(' ', '_')}_Resume.pdf",
                     mime="application/pdf",
-                    use_container_width=True
+                    use_container_width=True,
                 )
             else:
-                st.button("🧾 PDF (install fpdf2)", disabled=True, use_container_width=True)
+                st.button(
+                    "🧾 PDF (install fpdf2)",
+                    disabled=True,
+                    use_container_width=True,
+                )
 
-        if not docx_available or not fpdf_available:
-            st.caption("💡 Run `pip install python-docx fpdf2` to enable all export formats.")
+        if not (
+            globals().get("docx_available", False)
+            and globals().get("fpdf_available", False)
+        ):
+            st.caption(
+                "💡 Run `pip install python-docx fpdf2` to enable all export"
+                " formats."
+            )
             with st.expander("🔧 Why is export disabled? (diagnostics)"):
-                st.write(f"**python-docx available:** {docx_available}")
-                if docx_import_error:
+                st.write(
+                    "**python-docx available:**"
+                    f" {globals().get('docx_available', False)}"
+                )
+                if globals().get("docx_import_error"):
                     st.code(docx_import_error, language="text")
-                st.write(f"**fpdf2 available:** {fpdf_available}")
-                if fpdf_import_error:
+                st.write(
+                    "**fpdf2 available:**"
+                    f" {globals().get('fpdf_available', False)}"
+                )
+                if globals().get("fpdf_import_error"):
                     st.code(fpdf_import_error, language="text")
                 st.write("**Python executable in use:**")
                 st.code(sys.executable, language="text")
-                st.write("Run this in the SAME environment the app is launched from:")
-                st.code("pip show fpdf2\npip show python-docx", language="bash")
-
+                st.write(
+                    "Run this in the SAME environment the app is launched"
+                    " from:"
+                )
+                st.code(
+                    "pip show fpdf2\npip show python-docx", language="bash"
+                )
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
     st.subheader("✨ Action-Oriented Bullet Point Improver")
