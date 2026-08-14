@@ -3,3 +3,6 @@ pypdf
 pdfplumber
 python-docx
 PyMuPDF
+pytesseract
+pdf2image
+Pillow
