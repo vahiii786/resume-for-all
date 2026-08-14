@@ -509,7 +509,10 @@ with tab1:
         with col_preview:
             st.markdown("### 📄 Document Preview")
 
-            if resume_file is not None and resume_file.name.lower().endswith(".pdf"):
+            if (
+                resume_file is not None
+                and resume_file.name.lower().endswith(".pdf")
+            ):
                 try:
                     if fitz_available:
                         resume_file.seek(0)
@@ -559,7 +562,9 @@ with tab1:
             ):
                 v1 = text_to_vector(resume_text)
                 v2 = text_to_vector(job_description)
-                match_percentage = round(get_cosine_similarity(v1, v2) * 100, 2)
+                match_percentage = round(
+                    get_cosine_similarity(v1, v2) * 100, 2
+                )
                 missing_skills = get_missing_keywords(
                     resume_text, job_description
                 )
@@ -569,7 +574,8 @@ with tab1:
                 c_m1, c_m2 = st.columns(2)
                 with c_m1:
                     st.metric(
-                        label="🎯 Job Match Score", value=f"{match_percentage}%"
+                        label="🎯 Job Match Score",
+                        value=f"{match_percentage}%",
                     )
                     if match_percentage >= 50:
                         st.success("🔥 High Alignment!")
@@ -609,28 +615,28 @@ with tab1:
                         st.write(f"🔹 **`{kw}`** — _\"{line}\"_")
 
                 st.divider()
-st.subheader(f"🔗 Live Job Openings: {target_role}")
+                st.subheader(f"🔗 Live Job Openings: {target_role}")
 
-# 3 Job Platforms Buttons Side-by-Side
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.link_button(
-        "Apply on LinkedIn 💼",
-        f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
-        use_container_width=True,
-    )
-with c2:
-    st.link_button(
-        "Apply on Naukri 🚀",
-        f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs",
-        use_container_width=True,
-    )
-with c3:
-    st.link_button(
-        "Apply on Indeed 🔍",
-        f"https://www.indeed.com/jobs?q={encoded_role}",
-        use_container_width=True,
-    )
+                # 3 Job Platforms Buttons Side-by-Side
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.link_button(
+                        "Apply on LinkedIn 💼",
+                        f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
+                        use_container_width=True,
+                    )
+                with c2:
+                    st.link_button(
+                        "Apply on Naukri 🚀",
+                        f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs",
+                        use_container_width=True,
+                    )
+                with c3:
+                    st.link_button(
+                        "Apply on Indeed 🔍",
+                        f"https://www.indeed.com/jobs?q={encoded_role}",
+                        use_container_width=True,
+                    )
 
             # CASE 2: GENERAL SCORE (NO JD)
             else:
