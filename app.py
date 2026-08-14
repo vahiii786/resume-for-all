@@ -262,42 +262,73 @@ with tab1:
         else:
             st.error("Please upload or paste both Resume and Job Description in the Sidebar!")
 
-# ==================== TAB 2: LIVE RESUME BUILDER ====================
+# ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
-    st.subheader("✏️ Build & Edit Your ATS Resume")
+    st.subheader("✏️ Resume Upload & Interactive Editor")
+    st.write("అప్లోడ్ చేసిన రెజ్యూమ్‌లోని వివరాలను కింద ఉన్న బాక్సులలో నేరుగా ఎడిట్ లేదా మార్పులు చేసుకోవచ్చు.")
+    
+    # 1. File Upload to Edit
+    uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
+    
+    # State setup for dynamic editing
+    if "ed_name" not in st.session_state: st.session_state["ed_name"] = "Your Full Name"
+    if "ed_title" not in st.session_state: st.session_state["ed_title"] = "Professional Title"
+    if "ed_email" not in st.session_state: st.session_state["ed_email"] = "email@example.com"
+    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = "+91 9876543210"
+    if "ed_loc" not in st.session_state: st.session_state["ed_loc"] = "City, Country"
+    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = ""
+    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = "- Degree | College Name (Year)"
+    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = "- Technical Skills: Python, SQL..."
+    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = ""
+    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = "- Project Name: Description"
+    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = ""
+
+    if uploaded_edit_file is not None:
+        if st.button("📥 Load Uploaded Text into Editor"):
+            extracted_raw = extract_text_from_file(uploaded_edit_file)
+            if extracted_raw:
+                # Load extracted content into editable experience/raw state
+                st.session_state["ed_exp"] = extracted_raw
+                st.success("✅ Text loaded successfully! You can now edit/modify all text below.")
+            else:
+                st.error("Could not read text from this file. Try uploading a text-based PDF/DOCX.")
+
+    st.divider()
+
     theme_choice = st.radio("🎨 Choose Resume Theme:", ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"], horizontal=True)
 
     b_col1, b_col2 = st.columns([1, 1])
 
     with b_col1:
-        st.markdown("### 📝 Enter Details")
-        full_name = st.text_input("Full Name", "Your Full Name")
-        title = st.text_input("Professional Title", "Data Science / Developer")
-        email = st.text_input("Email", "yourname@email.com")
-        phone = st.text_input("Phone", "+91 9876543210")
-        location = st.text_input("Location", "Bhimavaram, India")
-        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/yourprofile")
-        github = st.text_input("GitHub Profile URL", "https://github.com/yourusername")
+        st.markdown("### 📝 Edit Resume Sections")
+        
+        full_name = st.text_input("Full Name", st.session_state["ed_name"])
+        title = st.text_input("Professional Title", st.session_state["ed_title"])
+        email = st.text_input("Email", st.session_state["ed_email"])
+        phone = st.text_input("Phone Number", st.session_state["ed_phone"])
+        location = st.text_input("Location", st.session_state["ed_loc"])
+        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/")
+        github = st.text_input("GitHub Profile URL", "https://github.com/")
 
         st.markdown("---")
-        objective = st.text_area("Career Objective", "")
-        education = st.text_area("Education", "- B.Sc Computer Science | Aditya Degree College (2023 - 2026)\n- Higher Secondary | Narayana Junior College (2020 - 2022)")
-        skills = st.text_area("Technical Skills", "- Languages: C, Java, Python\n- Databases: DBMS, SQL\n- Fundamentals: Algorithms, Data Structures")
-        certifications = st.text_area("Certifications (Optional)", "- Cisco Certification: C and Cybersecurity\n- Infosys Springboard: Computer Fundamentals & C")
-        projects = st.text_area("Key Projects", "- Smart AI Resume Matcher\n  - Developed Streamlit app with ATS analysis.\n  - Embedded real-time job recommendation engines.")
-        experience = st.text_area("Work / Internship Experience (Optional)", "")
-        languages = st.text_area("Language Competencies", "- Telugu: Native\n- English: Fluent\n- Hindi: Conversational")
-        hobbies = st.text_input("Interests / Hobbies (Optional)", "Reading Tech Blogs, Cooking, Problem Solving")
-        declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
+        objective = st.text_area("Edit Objective / Summary", st.session_state["ed_obj"], height=100)
+        skills = st.text_area("Edit Skills (Use - for bullet points)", st.session_state["ed_skills"], height=120)
+        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", st.session_state["ed_exp"], height=200)
+        projects = st.text_area("Edit Projects", st.session_state["ed_proj"], height=120)
+        education = st.text_area("Edit Education", st.session_state["ed_edu"], height=100)
+        certifications = st.text_area("Edit Certifications (Optional)", st.session_state["ed_cert"], height=80)
+        languages = st.text_area("Languages Spoken", "- English\n- Telugu")
+        declaration = st.text_area("Declaration Statement", "I hereby declare that all information provided is accurate to the best of my knowledge.")
         dec_date = st.text_input("Date", "")
 
-        combined_text = f"{full_name}\n{title}\n{objective}\n{education}\n{skills}\n{certifications}\n{projects}\n{experience}\n{languages}\n{hobbies}"
-        if st.button("🔄 Sync Created Resume with Analyzer"):
-            st.session_state["built_resume_text"] = combined_text
-            st.success("✅ Resume text synced automatically! Now go to Tab 1 to check match score.")
+        # Sync edited content with Tab 1 (Analyzer)
+        edited_full_text = f"{full_name}\n{title}\n{objective}\n{skills}\n{experience}\n{projects}\n{education}\n{certifications}"
+        if st.button("🔄 Sync Edited Resume with Analyzer"):
+            st.session_state["built_resume_text"] = edited_full_text
+            st.success("✅ Changes synced! Go to Tab 1 to check ATS score of this updated resume.")
 
     with b_col2:
-        st.markdown("### 👁️ Live Preview")
+        st.markdown("### 👁️ Live Updated Preview")
         
         if theme_choice == "Modern Blue":
             primary_color, title_color, header_bg = "#1E3A8A", "#4B5563", "transparent"
@@ -322,9 +353,8 @@ with tab2:
         skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
         crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3>{format_bullet_points(certifications)}" if certifications.strip() else ""
         prj_s = f"<h3 style='color:{primary_color};'>Projects</h3>{format_bullet_points(projects)}" if projects.strip() else ""
-        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internships</h3>{format_bullet_points(experience)}" if experience.strip() else ""
-        lng_s = f"<h3 style='color:{primary_color};'>Language Competencies</h3>{format_bullet_points(languages)}" if languages.strip() else ""
-        hob_s = f"<h3 style='color:{primary_color};'>Interests / Hobbies</h3><p>{hobbies}</p>" if hobbies.strip() else ""
+        exp_s = f"<h3 style='color:{primary_color};'>Experience / Career History</h3>{format_bullet_points(experience)}" if experience.strip() else ""
+        lng_s = f"<h3 style='color:{primary_color};'>Languages</h3>{format_bullet_points(languages)}" if languages.strip() else ""
         dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
 
         html_resume = f"""
@@ -355,7 +385,7 @@ with tab2:
                 </div>
                 <hr>
                 
-                {obj_s} {edu_s} {skl_s} {crt_s} {prj_s} {exp_s} {lng_s} {hob_s} {dec_s}
+                {obj_s} {skl_s} {exp_s} {prj_s} {edu_s} {crt_s} {lng_s} {dec_s}
                 
                 <table class="footer-table">
                     <tr>
@@ -374,14 +404,13 @@ with tab2:
         st.markdown(html_resume, unsafe_allow_html=True)
         st.write("")
         st.download_button(
-            label="📥 Download HTML Resume (Open & Press Ctrl+P for PDF)",
+            label="📥 Download Edited Resume (Press Ctrl+P for PDF)",
             data=html_resume,
-            file_name=f"{full_name.replace(' ', '_')}_Resume.html",
+            file_name=f"{full_name.replace(' ', '_')}_Edited_Resume.html",
             mime="text/html",
             type="primary",
             use_container_width=True
         )
-
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
     st.subheader("✨ Action-Oriented Bullet Point Improver")
