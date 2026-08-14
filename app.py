@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import base64
 import io
 import sys
 from collections import Counter
