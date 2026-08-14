@@ -1,1 +1,7 @@
-
+streamlit
+scikit-learn
+pypdf
+python-docx
+pytesseract
+Pillow
+reportlab
