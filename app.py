@@ -3,20 +3,26 @@ import re
 from collections import Counter
 import math
 import urllib.parse
+import io
 
-# Safe Imports
+# Safe Imports with Enhanced PDF Handling
+pypdf_available = False
 try:
-    from pypdf import PdfReader
+    import pypdf
+    pypdf_available = True
 except ImportError:
     try:
-        from PyPDF2 import PdfReader
+        import PyPDF2 as pypdf
+        pypdf_available = True
     except ImportError:
-        PdfReader = None
+        pypdf_available = False
 
+docx_available = False
 try:
     import docx
+    docx_available = True
 except ImportError:
-    docx = None
+    docx_available = False
 
 st.set_page_config(
     page_title="AI Resume Suite & Career Hub",
@@ -37,32 +43,44 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🎤 AI Mock Interview"
 ])
 
-# Shared Helper Functions
+# Robust Helper Function to Read PDF, DOCX, TXT
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
         return ""
+    
     file_type = uploaded_file.name.split('.')[-1].lower()
     text = ""
-    if file_type == "pdf" and PdfReader is not None:
-        try:
-            reader = PdfReader(uploaded_file)
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
-        except Exception:
-            pass
-    elif file_type in ["docx", "doc"] and docx is not None:
-        try:
-            doc = docx.Document(uploaded_file)
-            for para in doc.paragraphs:
-                text += para.text + "\n"
-        except Exception:
-            pass
-    elif file_type in ["txt", "md"]:
-        try:
+    
+    try:
+        # Reset file pointer to the beginning
+        uploaded_file.seek(0)
+        
+        if file_type == "pdf":
+            if pypdf_available:
+                reader = pypdf.PdfReader(uploaded_file)
+                for page in reader.pages:
+                    extracted = page.extract_text()
+                    if extracted:
+                        text += extracted + "\n"
+            else:
+                st.sidebar.error("⚠️ PDF reader library not found. Add 'pypdf' to requirements.txt!")
+
+        elif file_type in ["docx", "doc"]:
+            if docx_available:
+                doc = docx.Document(uploaded_file)
+                for para in doc.paragraphs:
+                    if para.text:
+                        text += para.text + "\n"
+            else:
+                st.sidebar.error("⚠️ DOCX reader library not found. Add 'python-docx' to requirements.txt!")
+
+        elif file_type in ["txt", "md"]:
             text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
-        except Exception:
-            text = ""
-    return text
+            
+    except Exception as e:
+        st.sidebar.error(f"Error reading file '{uploaded_file.name}': {e}")
+        
+    return text.strip()
 
 def text_to_vector(text):
     words = re.findall(r'\w+', text.lower())
@@ -129,13 +147,21 @@ def format_bullet_points(text):
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
 resume_text_input = st.sidebar.text_area("OR Paste Resume Text", height=150)
+
 extracted_resume = extract_text_from_file(resume_file)
-resume_text = extracted_resume if extracted_resume.strip() != "" else resume_text_input
+resume_text = extracted_resume if extracted_resume != "" else resume_text_input
+
+if resume_file and extracted_resume != "":
+    st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
 
 jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
 jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
+
 extracted_jd = extract_text_from_file(jd_file)
-job_description = extracted_jd if extracted_jd.strip() != "" else jd_text_input
+job_description = extracted_jd if extracted_jd != "" else jd_text_input
+
+if jd_file and extracted_jd != "":
+    st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
@@ -172,7 +198,7 @@ with tab1:
             with c3:
                 st.link_button("Apply on Indeed 🚀", f"https://www.indeed.com/jobs?q={encoded_role}", use_container_width=True)
         else:
-            st.error("Please upload/paste both Resume and Job Description in the Sidebar!")
+            st.error("Please upload or paste both Resume and Job Description in the Sidebar!")
 
 # ==================== TAB 2: LIVE RESUME BUILDER ====================
 with tab2:
@@ -222,7 +248,6 @@ with tab2:
         linkedin_url = format_url(linkedin)
         github_url = format_url(github)
 
-        # Display exact text entered by user while being clickable
         contact_items = [f"📍 {location}", f"📞 {phone}", f"📧 {email}"]
         if linkedin.strip():
             contact_items.append(f"<a href='{linkedin_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{linkedin.strip()}</a>")
