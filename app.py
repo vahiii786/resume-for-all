@@ -496,83 +496,129 @@ def calculate_general_resume_score(text):
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
-    st.subheader("📊 Resume Score & Analysis")
-    
-    if st.button("Run Full Analysis 🚀", type="primary"):
-        if resume_text.strip() == "":
-            st.error("Please upload or paste your Resume first in the Sidebar!")
-        else:
-            # CASE 1: USER HAS A JOB DESCRIPTION (YES)
-            if has_jd == "Yes (Compare with Job Description)" and job_description.strip() != "":
-                v1 = text_to_vector(resume_text)
-                v2 = text_to_vector(job_description)
-                match_percentage = round(get_cosine_similarity(v1, v2) * 100, 2)
-                missing_skills = get_missing_keywords(resume_text, job_description)
-                target_role = extract_job_title(job_description)
-                encoded_role = urllib.parse.quote(target_role)
+    st.subheader(" Resume Score & Analysis")
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric(label="🎯 Job Match Score", value=f"{match_percentage}%")
-                    if match_percentage >= 50:
-                        st.success("🎯 High Match Alignment with Job Description!")
-                    elif match_percentage >= 25:
-                        st.warning("⚠️ Moderate Alignment. Needs improvement.")
-                    else:
-                        st.error("❌ Low Alignment. Add relevant missing keywords.")
-                with col2:
-                    st.write("**Missing Keywords from JD:**")
-                    st.write(", ".join([f"`{w}`" for w in missing_skills]) if missing_skills else "None! Excellent Job.")
+    if resume_text.strip() == "":
+        st.info(" Sidebar లో మీ Resume ని అప్‌లోడ్ లేదా పేస్ట్ చేయండి.")
+    else:
+        # 1. స్క్రీన్‌ని రెండు కాలమ్స్‌గా విభజించడం (రైట్ సైడ్ ప్రివ్యూ - లెఫ్ట్ సైడ్ అనాలిసిస్)
+        col_preview, col_analysis = st.columns([1, 1.2])
 
-                # ---- NEW: Explainable, section-wise breakdown ----
-                st.divider()
-                st.markdown("### 🧩 Section-Wise Match Breakdown")
-                st.caption("The overall score is one number — this shows *where* it's coming from.")
-                section_scores = calculate_section_scores(resume_text, job_description)
-                sc1, sc2, sc3, sc4 = st.columns(4)
-                sc1.metric("Skills Match", f"{section_scores['skills']}%")
-                sc2.metric("Experience Match", f"{section_scores['experience']}%")
-                sc3.metric("Projects Match", f"{section_scores['projects']}%")
-                sc4.metric("Education Match", f"{section_scores['education']}%")
+        # ------------ ఎడమ వైపు (లేదా ఒక కాలమ్): RESUME DOCUMENT PREVIEW ------------
+        with col_preview:
+            st.markdown("### Document Preview")
 
-                # ---- NEW: Evidence-based matched keywords (verbatim proof) ----
-                st.divider()
-                st.markdown("### 🔎 Explainable Evidence — Why These Keywords Matched")
-                st.caption("Every matched keyword below is backed by the exact line it was found in — no black-box scoring.")
-                evidence_list = get_evidence_matches(resume_text, job_description)
-                if evidence_list:
-                    for kw, line in evidence_list:
-                        st.write(f"✅ **`{kw}`** — found in: _\"{line}\"_")
-                else:
-                    st.info("No direct keyword evidence found between resume and JD.")
-
-                st.divider()
-                st.subheader(f"💼 Live Job Openings: {target_role}")
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.link_button("Apply on LinkedIn 🚀", f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}", use_container_width=True)
-                with c2:
-                    st.link_button("Apply on Naukri 🚀", f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs", use_container_width=True)
-                with c3:
-                    st.link_button("Apply on Indeed 🚀", f"https://www.indeed.com/jobs?q={encoded_role}", use_container_width=True)
-
-            # CASE 2: USER DOES NOT HAVE A JOB DESCRIPTION (NO)
+            # యూజర్ PDF అప్‌లోడ్ చేసినట్లయితే PDF Viewer ని చూపిస్తుంది
+            if resume_file is not None and resume_file.name.endswith(".pdf"):
+                resume_file.seek(0)
+                base64_pdf = base64.b64encode(resume_file.read()).decode("utf-8")
+                # PDF Viewer Embedding Code
+                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+                st.markdown(pdf_display, unsafe_allow_html=True)
             else:
-                gen_score, feedback_list = calculate_general_resume_score(resume_text)
-                
-                st.metric(label="📈 General Resume Quality Score", value=f"{gen_score} / 100")
-                
-                if gen_score >= 75:
-                    st.success("🌟 Excellent Resume Structure & ATS Readiness!")
-                elif gen_score >= 50:
-                    st.warning("⚠️ Good Resume, but can be improved further.")
-                else:
-                    st.error("❌ Low Score. Consider adding missing sections or content.")
+                # PDF కాకుండా టెక్స్ట్/DOCX లేదా పేస్ట్ చేసిన టెక్స్ట్ అయితే అందమైన కార్డ్ లాంటి బాక్స్‌లో చూపిస్తుంది
+                st.text_area(
+                    "Uploaded Resume Content",
+                    value=resume_text,
+                    height=600,
+                    disabled=True,
+                )
 
-                st.divider()
-                st.markdown("### 🔍 ATS Quality Feedback Summary:")
-                for item in feedback_list:
-                    st.write(item)
+        # ------------ కుడి వైపు: SCORE & ANALYSIS ------------
+        with col_analysis:
+            if st.button("Run Full Analysis ", type="primary", key="tab1_run_btn"):
+                # CASE 1: USER HAS A JOB DESCRIPTION (YES)
+                if (
+                    has_jd == "Yes (Compare with Job Description)"
+                    and job_description.strip() != ""
+                ):
+                    v1 = text_to_vector(resume_text)
+                    v2 = text_to_vector(job_description)
+                    match_percentage = round(
+                        get_cosine_similarity(v1, v2) * 100, 2
+                    )
+                    missing_skills = get_missing_keywords(
+                        resume_text, job_description
+                    )
+                    target_role = extract_job_title(job_description)
+                    encoded_role = urllib.parse.quote(target_role)
+
+                    c_m1, c_m2 = st.columns(2)
+                    with c_m1:
+                        st.metric(
+                            label=" Job Match Score",
+                            value=f"{match_percentage}%",
+                        )
+                        if match_percentage >= 50:
+                            st.success(" High Match Alignment!")
+                        elif match_percentage >= 25:
+                            st.warning(" Moderate Alignment.")
+                        else:
+                            st.error(" Low Alignment.")
+                    with c_m2:
+                        st.write("**Missing Keywords:**")
+                        st.write(
+                            ", ".join([f"`{w}`" for w in missing_skills])
+                            if missing_skills
+                            else "None!"
+                        )
+
+                    st.divider()
+                    st.markdown("#### Section-Wise Match Breakdown")
+                    section_scores = calculate_section_scores(
+                        resume_text, job_description
+                    )
+                    sc1, sc2 = st.columns(2)
+                    sc1.metric("Skills Match", f"{section_scores['skills']}%")
+                    sc2.metric(
+                        "Experience Match", f"{section_scores['experience']}%"
+                    )
+                    sc3, sc4 = st.columns(2)
+                    sc3.metric(
+                        "Projects Match", f"{section_scores['projects']}%"
+                    )
+                    sc4.metric(
+                        "Education Match", f"{section_scores['education']}%"
+                    )
+
+                    st.divider()
+                    st.markdown("#### Matched Keywords Evidence")
+                    evidence_list = get_evidence_matches(
+                        resume_text, job_description
+                    )
+                    if evidence_list:
+                        for kw, line in evidence_list[:5]:
+                            st.write(f" **`{kw}`** — _\"{line}\"_")
+
+                    st.divider()
+                    st.subheader(f" Live Job Openings: {target_role}")
+                    st.link_button(
+                        "Apply on LinkedIn ",
+                        f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
+                        use_container_width=True,
+                    )
+
+                # CASE 2: USER DOES NOT HAVE A JOB DESCRIPTION (NO)
+                else:
+                    gen_score, feedback_list = calculate_general_resume_score(
+                        resume_text
+                    )
+
+                    st.metric(
+                        label=" General Resume Quality Score",
+                        value=f"{gen_score} / 100",
+                    )
+                    if gen_score >= 75:
+                        st.success(" Excellent Resume Structure!")
+                    elif gen_score >= 50:
+                        st.warning(" Good Resume, but can be improved.")
+                    else:
+                        st.error(" Low Score.")
+
+                    st.divider()
+                    st.markdown("#### ATS Quality Feedback:")
+                    for item in feedback_list:
+                        st.write(item)
 
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
