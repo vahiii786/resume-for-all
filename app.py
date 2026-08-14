@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import io
 from collections import Counter
 import math
 import urllib.parse
@@ -29,7 +30,7 @@ except ImportError:
 
 docx_available = False
 try:
-    import docx
+    import docx  # python-docx (used for both reading uploads and writing exports)
     docx_available = True
 except ImportError:
     docx_available = False
@@ -41,6 +42,13 @@ try:
     ocr_available = True
 except ImportError:
     ocr_available = False
+
+fpdf_available = False
+try:
+    from fpdf import FPDF
+    fpdf_available = True
+except ImportError:
+    fpdf_available = False
 
 st.set_page_config(
     page_title="AI Resume Suite & Career Hub",
@@ -152,11 +160,68 @@ def get_cosine_similarity(vec1, vec2):
     denominator = math.sqrt(sum1) * math.sqrt(sum2)
     return float(numerator) / denominator if denominator else 0.0
 
+STOP_WORDS = {'and', 'the', 'for', 'with', 'you', 'this', 'that', 'from', 'have', 'will', 'are', 'your', 'our',
+              'work', 'experience', 'looking', 'role', 'team', 'company', 'required', 'skills', 'good', 'must'}
+
 def get_missing_keywords(resume_text, jd_text):
     clean_resume = set(re.findall(r'\b[a-zA-Z]{3,}\b', resume_text.lower()))
     clean_jd = set(re.findall(r'\b[a-zA-Z]{3,}\b', jd_text.lower()))
-    stop_words = {'and', 'the', 'for', 'with', 'you', 'this', 'that', 'from', 'have', 'will', 'are', 'your', 'our', 'work', 'experience', 'looking', 'role', 'team', 'company', 'required', 'skills', 'good', 'must'}
-    return list((clean_jd - stop_words) - (clean_resume - stop_words))[:12]
+    return list((clean_jd - STOP_WORDS) - (clean_resume - STOP_WORDS))[:12]
+
+def get_evidence_matches(resume_text, jd_text, limit=8):
+    """For each JD keyword that IS present in the resume, find the exact resume line
+    where it appears — this is the 'explainable / verbatim evidence' behind the score."""
+    clean_resume = set(re.findall(r'\b[a-zA-Z]{3,}\b', resume_text.lower()))
+    clean_jd = set(re.findall(r'\b[a-zA-Z]{3,}\b', jd_text.lower()))
+    matched = list((clean_jd - STOP_WORDS) & (clean_resume - STOP_WORDS))
+
+    resume_lines = [l.strip() for l in resume_text.split('\n') if l.strip()]
+    evidence = []
+    for kw in matched:
+        for line in resume_lines:
+            if re.search(r'\b' + re.escape(kw) + r'\b', line.lower()):
+                evidence.append((kw, line))
+                break
+        if len(evidence) >= limit:
+            break
+    return evidence
+
+def get_section_text(text, keywords):
+    """Pulls out the block of text under a heading that matches any of `keywords`,
+    stopping at the next recognizable heading."""
+    text_lines = text.split('\n')
+    capturing = False
+    result = []
+    for line in text_lines:
+        l_str = line.strip().lower()
+        if any(k in l_str for k in keywords) and len(l_str) < 35:
+            capturing = True
+            continue
+        elif capturing and any(h in l_str for h in ['education', 'skills', 'experience', 'projects', 'certifications', 'summary', 'objective']) and len(l_str) < 35:
+            break
+        if capturing:
+            result.append(line)
+    return '\n'.join(result).strip()
+
+def extract_resume_sections(text):
+    return {
+        'skills': get_section_text(text, ['skills', 'technical skills', 'technologies']),
+        'experience': get_section_text(text, ['experience', 'work experience', 'employment', 'internship']),
+        'projects': get_section_text(text, ['projects', 'academic projects']),
+        'education': get_section_text(text, ['education', 'qualification', 'academic background']),
+    }
+
+def calculate_section_scores(resume_text, jd_text):
+    """Breaks the single match % into per-section scores so the user can see
+    WHERE the match is strong or weak, instead of one opaque number."""
+    sections = extract_resume_sections(resume_text)
+    v2 = text_to_vector(jd_text)
+    scores = {}
+    for name, sec_text in sections.items():
+        content = sec_text if sec_text.strip() else resume_text  # fallback if section wasn't detected
+        v1 = text_to_vector(content)
+        scores[name] = round(get_cosine_similarity(v1, v2) * 100, 1)
+    return scores
 
 def extract_job_title(jd_text):
     lines = jd_text.strip().split('\n')
@@ -198,6 +263,111 @@ def format_bullet_points(text):
         html_out += "</ul>"
         
     return html_out
+
+# ---------- No-fabrication bullet rewriter (Tab 3) ----------
+def rewrite_bullet_no_fabrication(bullet):
+    """Rewrites a bullet with stronger verbs WITHOUT inventing metrics.
+    If the original line already has a number, that exact number is reused.
+    If it doesn't, no fake percentage/number is added — impact language stays qualitative."""
+    bullet = bullet.strip()
+    numbers = re.findall(r'\d+(?:\.\d+)?%?\+?', bullet)
+    has_metric = len(numbers) > 0
+    metric = numbers[0] if has_metric else None
+
+    core = re.sub(r'^(i|I)\s+(made|did|created|worked on|built|helped)\s+', '', bullet, flags=re.IGNORECASE).strip()
+    core = core.rstrip('.')
+    if not core:
+        core = bullet.rstrip('.')
+
+    if has_metric:
+        opt1 = f"Engineered {core}, contributing to the {metric} result achieved."
+        opt2 = f"Developed and implemented {core}, directly driving the {metric} outcome."
+        opt3 = f"Built {core} end-to-end, validated by the {metric} figure reported."
+    else:
+        opt1 = f"Engineered {core}, with a focus on reliability and maintainable design."
+        opt2 = f"Developed and implemented {core}, streamlining the overall workflow."
+        opt3 = f"Built {core} from the ground up, applying best practices for performance and scalability."
+
+    return opt1, opt2, opt3, has_metric
+
+# ---------- DOCX / PDF export (Tab 2) ----------
+def build_section_list(objective, skills, experience, projects, education, certifications, languages):
+    return [
+        ("Career Objective", objective),
+        ("Technical Skills", skills),
+        ("Experience / Internship", experience),
+        ("Projects", projects),
+        ("Education", education),
+        ("Certifications", certifications),
+        ("Languages Spoken", languages),
+    ]
+
+def generate_docx_resume(name, title, contact_line, objective, skills, experience, projects,
+                          education, certifications, languages, declaration, dec_date, loc):
+    doc = docx.Document()
+    doc.add_heading(name, level=0)
+    doc.add_paragraph(title)
+    doc.add_paragraph(contact_line)
+
+    for heading_text, content in build_section_list(objective, skills, experience, projects, education, certifications, languages):
+        if content.strip():
+            doc.add_heading(heading_text, level=2)
+            for line in content.strip().split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith(('-', '*', '•')):
+                    doc.add_paragraph(line.lstrip('-*• ').strip(), style='List Bullet')
+                else:
+                    doc.add_paragraph(line)
+
+    if declaration.strip():
+        doc.add_heading("Declaration", level=2)
+        doc.add_paragraph(declaration)
+        doc.add_paragraph(f"Date: {dec_date}    Location: {loc}    Signature: {name}")
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+def generate_pdf_resume(name, title, contact_line, objective, skills, experience, projects,
+                         education, certifications, languages, declaration, dec_date, loc):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.multi_cell(0, 10, name, align='C')
+    pdf.set_font("Helvetica", "", 12)
+    pdf.multi_cell(0, 8, title, align='C')
+    pdf.set_font("Helvetica", "", 10)
+    pdf.multi_cell(0, 6, contact_line, align='C')
+    pdf.ln(4)
+
+    for heading_text, content in build_section_list(objective, skills, experience, projects, education, certifications, languages):
+        if content.strip():
+            pdf.set_font("Helvetica", "B", 13)
+            pdf.cell(0, 8, heading_text, ln=True)
+            pdf.set_font("Helvetica", "", 10)
+            for line in content.strip().split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                bullet_prefix = "• " if line.startswith(('-', '*', '•')) else ""
+                clean_line = line.lstrip('-*• ').strip()
+                pdf.multi_cell(0, 6, bullet_prefix + clean_line)
+            pdf.ln(2)
+
+    if declaration.strip():
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 8, "Declaration", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.multi_cell(0, 6, declaration)
+        pdf.multi_cell(0, 6, f"Date: {dec_date}    Location: {loc}    Signature: {name}")
+
+    raw = pdf.output()
+    if isinstance(raw, str):
+        raw = raw.encode('latin-1')
+    return bytes(raw)
 
 # Sidebar Inputs
 st.sidebar.header("📥 Upload Documents")
@@ -303,6 +473,28 @@ with tab1:
                     st.write("**Missing Keywords from JD:**")
                     st.write(", ".join([f"`{w}`" for w in missing_skills]) if missing_skills else "None! Excellent Job.")
 
+                # ---- NEW: Explainable, section-wise breakdown ----
+                st.divider()
+                st.markdown("### 🧩 Section-Wise Match Breakdown")
+                st.caption("The overall score is one number — this shows *where* it's coming from.")
+                section_scores = calculate_section_scores(resume_text, job_description)
+                sc1, sc2, sc3, sc4 = st.columns(4)
+                sc1.metric("Skills Match", f"{section_scores['skills']}%")
+                sc2.metric("Experience Match", f"{section_scores['experience']}%")
+                sc3.metric("Projects Match", f"{section_scores['projects']}%")
+                sc4.metric("Education Match", f"{section_scores['education']}%")
+
+                # ---- NEW: Evidence-based matched keywords (verbatim proof) ----
+                st.divider()
+                st.markdown("### 🔎 Explainable Evidence — Why These Keywords Matched")
+                st.caption("Every matched keyword below is backed by the exact line it was found in — no black-box scoring.")
+                evidence_list = get_evidence_matches(resume_text, job_description)
+                if evidence_list:
+                    for kw, line in evidence_list:
+                        st.write(f"✅ **`{kw}`** — found in: _\"{line}\"_")
+                else:
+                    st.info("No direct keyword evidence found between resume and JD.")
+
                 st.divider()
                 st.subheader(f"💼 Live Job Openings: {target_role}")
                 c1, c2, c3 = st.columns(3)
@@ -364,7 +556,6 @@ with tab2:
                     st.session_state["ed_name"] = lines[0]
                 
                 # Email Extraction Regex/Check
-                import re
                 emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', extracted_raw)
                 if emails: st.session_state["ed_email"] = emails[0]
                 
@@ -372,27 +563,7 @@ with tab2:
                 phones = re.findall(r'[\+\(]?[0-9][0-9\-\s\(\)]{8,}[0-9]', extracted_raw)
                 if phones: st.session_state["ed_phone"] = phones[0]
 
-                # Section Extraction Logic based on Headings
-                lower_text = extracted_raw.lower()
-                
-                # Helper to split text by headers
-                def get_section_text(text, keywords):
-                    text_lines = text.split('\n')
-                    capturing = False
-                    result = []
-                    for line in text_lines:
-                        l_str = line.strip().lower()
-                        # If line matches section heading
-                        if any(k in l_str for k in keywords) and len(l_str) < 35:
-                            capturing = True
-                            continue
-                        # If hit another potential heading stop
-                        elif capturing and any(h in l_str for h in ['education', 'skills', 'experience', 'projects', 'certifications', 'summary', 'objective']) and len(l_str) < 35:
-                            break
-                        if capturing:
-                            result.append(line)
-                    return '\n'.join(result).strip()
-
+                # Section Extraction Logic based on Headings (uses the shared get_section_text helper)
                 parsed_obj = get_section_text(extracted_raw, ['objective', 'summary', 'profile'])
                 parsed_skills = get_section_text(extracted_raw, ['skills', 'technical skills', 'technologies'])
                 parsed_exp = get_section_text(extracted_raw, ['experience', 'work experience', 'employment', 'internship'])
@@ -474,6 +645,11 @@ with tab2:
             contact_items.append(f"<a href='{github_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{github.strip()}</a>")
         
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
+        contact_plain = f"{p_loc} | {p_phone} | {p_email}"
+        if linkedin.strip():
+            contact_plain += f" | {linkedin.strip()}"
+        if github.strip():
+            contact_plain += f" | {github.strip()}"
 
         obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3>{format_bullet_points(objective)}" if objective.strip() else ""
         edu_s = f"<h3 style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}" if education.strip() else ""
@@ -530,24 +706,71 @@ with tab2:
         """
         st.markdown(html_resume, unsafe_allow_html=True)
         st.write("")
-        st.download_button(
-            label="📥 Download Edited Resume (Press Ctrl+P for PDF)",
-            data=html_resume,
-            file_name=f"{p_name.replace(' ', '_')}_Resume.html",
-            mime="text/html",
-            type="primary",
-            use_container_width=True
-        )
+
+        # ---- Export row: HTML (existing) + NEW DOCX + NEW PDF ----
+        exp_col1, exp_col2, exp_col3 = st.columns(3)
+
+        with exp_col1:
+            st.download_button(
+                label="📥 Download HTML",
+                data=html_resume,
+                file_name=f"{p_name.replace(' ', '_')}_Resume.html",
+                mime="text/html",
+                type="primary",
+                use_container_width=True
+            )
+
+        with exp_col2:
+            if docx_available:
+                docx_bytes = generate_docx_resume(
+                    p_name, p_title, contact_plain, objective, skills, experience,
+                    projects, education, certifications, languages, declaration, dec_date, p_loc
+                )
+                st.download_button(
+                    label="📄 Download DOCX",
+                    data=docx_bytes,
+                    file_name=f"{p_name.replace(' ', '_')}_Resume.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
+                )
+            else:
+                st.button("📄 DOCX (install python-docx)", disabled=True, use_container_width=True)
+
+        with exp_col3:
+            if fpdf_available:
+                pdf_bytes = generate_pdf_resume(
+                    p_name, p_title, contact_plain, objective, skills, experience,
+                    projects, education, certifications, languages, declaration, dec_date, p_loc
+                )
+                st.download_button(
+                    label="🧾 Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"{p_name.replace(' ', '_')}_Resume.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            else:
+                st.button("🧾 PDF (install fpdf2)", disabled=True, use_container_width=True)
+
+        if not docx_available or not fpdf_available:
+            st.caption("💡 Run `pip install python-docx fpdf2` to enable all export formats.")
+
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
     st.subheader("✨ Action-Oriented Bullet Point Improver")
+    st.caption("No fabrication: rewrites only reuse numbers you already wrote — they never invent new metrics.")
     raw_bullet = st.text_input("Enter a simple project line:", "I made a python app for analysis")
     if st.button("Enhance Bullet Point ✨"):
         if raw_bullet.strip():
+            opt1, opt2, opt3, has_metric = rewrite_bullet_no_fabrication(raw_bullet)
+
+            if not has_metric:
+                st.caption("ℹ️ No number was found in your original line, so none was invented. Add a real metric (%, count, time saved) to your resume for stronger rewrites.")
+
             st.markdown("### 🌟 Suggested Action-Oriented Options:")
-            st.info("👉 **Option 1 (Metric Focused):** 'Architected and deployed a Python application, improving data processing and operational efficiency by 25%.'")
-            st.success("👉 **Option 2 (Action Focused):** 'Spearheaded the design and implementation of an end-to-end Python pipeline to analyze key metrics.'")
-            st.warning("👉 **Option 3 (Technical Focus):** 'Engineered a high-performance Python application utilizing optimized data structures for real-time analysis.'")
+            st.info(f"👉 **Option 1 (Technical Focus):** '{opt1}'")
+            st.success(f"👉 **Option 2 (Action Focus):** '{opt2}'")
+            st.warning(f"👉 **Option 3 (Outcome Focus):** '{opt3}'")
 
 # ==================== TAB 4: SMART PLACEMENT & RED FLAGS ====================
 with tab4:
