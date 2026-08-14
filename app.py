@@ -1,3 +1,186 @@
+
+Claude finished the response
+
+import streamlit as st import re from collections import Counter import math import urllib.parse from PIL import Image # Multi-level PDF & File Extraction Libraries fitz_available = False try: import fitz # PyMuPDF fitz_available = True except ImportError: fitz_available =
+
+pasted
+
+idhi naa resume app ki sambandhinchina code so indhulo madyalo telugucontent undhi adhi unwanted ayite remove cheyyu importent ayite naa app lo aa telugu content show avvakunda hide cheyu
+
+
+Identified Telugu text and strategized localization approach efficiently
+Identified Telugu text and strategized localization approach efficiently
+ఈ కోడ్‌లో Telugu content 4 చోట్ల ఉంది — అన్నీ UI లో కనిపించే helper/description టెక్స్ట్‌లే (functionality కి ఏమీ సంబంధం లేదు), కాబట్టి వాటిని English కి మార్చేసాను. దీనివల్ల app లో ఇక Telugu కనిపించదు, కానీ ఆ description సమాచారం (ఏం చెయ్యాలి అనే గైడెన్స్) పోకుండా అలాగే ఉంటుంది.
+
+Changed lines:
+
+Tab 2 description → English
+Tab 6 description → English
+Tab 7 description → English
+One comment (# Mandatory కాకుండా Optional JD Toggle) → English
+Rest of the code (logic, variable names, functions) — అస్సలు మార్చలేదు, safe గా ఉంచాను.
+
+
+Created a file, read a file
+Created a file, read a file
+ఇక app run చేస్తే Telugu text ఎక్కడా కనిపించదు — logic, features అన్నీ యధావిధిగానే పనిచేస్తాయి.
+
+
+Resume app
+PY 
+[Resume-for-All — Explainable Resume Analysis](https://resume-insight-lab.preview.emergentagent.com/)
+ee link asala ento chudu ready chey andhulo data enti
+
+
+Fetched: Resume-for-All — Explainable Resume Analysis
+Fetched: Resume-for-All — Explainable Resume Analysis
+ఆ link "Resume-for-All" అనే ఒక resume analysis tool. దీని గురించి ఏం ఉందో చూసాను:
+
+ఏం చేస్తుంది:
+
+మీ resume (PDF/DOCX/TXT, max 8MB) upload చేయాలి లేదా text paste చేయాలి
+Job Description (JD) optional గా paste చెయ్యొచ్చు — match score కోసం
+"Analyze Resume" బటన్ నొక్కితే resume ని analyze చేస్తుంది
+Features (వాళ్ళు చెప్పుకున్నవి):
+
+Explainable score — score కి ప్రతి పాయింట్‌కి verbatim evidence తో reason చూపిస్తుంది
+No fabrication — AI మీరు ఇవ్వని metrics ని invent చెయ్యదు (అంటే fake numbers add చేయదు)
+Export PDF/DOCX — improved resume ని ఒక్క క్లిక్‌లో download చేసుకోవచ్చు
+Tech: GPT-4o mini వాడుతున్నారని చెప్పుకుంది, Free · Anonymous · Honest అని tagline.
+
+"అందులో data ఏంటి" అంటే — ఇది కేవలం ఒక landing page/UI మాత్రమే (static homepage), actual analysis logic/backend ఏం చేస్తుందో ఈ page లో చూపించలేదు. బహుశా ఇది మీ resume app లాగే ఒక similar streamlit/web tool అయ్యుండొచ్చు, కానీ backend logic (scoring algorithm, prompt) ఏంటో ఈ page నుండి తెలియదు — అది వాళ్ళ server-side code లో ఉంటుంది, ఇక్కడ కనిపించదు.
+
+మీరు మీ app లో ఇలాంటి "Explainable score with verbatim evidence" feature add చేయాలనుకుంటున్నారా? అలా అయితే, ఇప్పుడున్న cosine-similarity match score కి, ఏ ఏ keyword/sentence match అయ్యిందో reason గా చూపించే logic add చేయగలను.
+
+haha add cheste baguntadha and features kuda
+
+అవును, add చేస్తే బాగుంటుంది — ఎందుకంటే ఇప్పుడు మీ app లో match score కేవలం ఒక సంఖ్య మాత్రమే చూపిస్తుంది (cosine similarity %), కానీ "ఎందుకు ఈ score వచ్చింది" అని user కి కనిపించదు. "Explainable" feature add చేస్తే trust పెరుగుతుంది, resume ఎక్కడ improve చెయ్యాలో clear గా తెలుస్తుంది.
+
+కొన్ని బాగుండే feature ideas:
+
+Evidence-based match — ప్రతి matched keyword కి, resume లో ఏ line/bullet లో అది కనిపించిందో చూపించడం (just score కాకుండా "why")
+Missing keyword → exact fix suggestion — మీ Tab 4 లో ఇది కొంతవరకు ఉంది, దాన్ని improve చేయొచ్చు
+No-fabrication rewrite rule — Tab 3 (Bullet Rewriter) లో స్టాటిక్ templates బదులు, resume లో ఉన్న actual facts/numbers మాత్రమే వాడి rewrite చేయడం (fake metrics add చేయకుండా)
+Section-wise score breakdown — overall score కాకుండా, Skills match %, Experience match %, Keywords match % విడివిడిగా చూపించడం
+Export improved resume as PDF/DOCX — ప్రస్తుతం మీ app HTML మాత్రమే download చేస్తుంది, real PDF/DOCX export add చేస్తే బాగుంటుంది
+ఇవన్నీ మీ ప్రస్తుత app architecture (cosine similarity + keyword matching) మీదే build చేయొచ్చు, పెద్ద rewrite అవసరం లేదు.
+
+ok add chesi pettu with new features
+
+
+Architected comprehensive resume analyzer with section scoring, evidence matching, and export functionality
+Architected comprehensive resume analyzer with section scoring, evidence matching, and export functionality
+బాగుంటుంది! కింద features add చేసి పూర్తి app ready చేస్తున్నాను:
+
+Tab 1 → Section-wise score breakdown (Skills/Experience/Projects/Education % విడివిడిగా) + Evidence-based matched keywords (ఏ keyword resume లో ఏ line లో దొరికిందో చూపిస్తుంది)
+Tab 2 → real DOCX & PDF export buttons (ఇప్పటివరకు HTML మాత్రమే ఉండేది)
+Tab 3 → No-fabrication bullet rewriter — మీ original bullet లో number ఉంటేనే దాన్ని వాడుతుంది, లేకపోతే fake % invent చేయదు (transparent గా చెప్తుంది కూడా)
+
+Created 2 files, ran 2 commands, viewed a file
+Created 2 files, ran 2 commands, viewed a file
+Ready — syntax check pass ఐంది. కొత్తగా ఏం add చేసానో:
+
+Tab 1 (Analyzer) — JD ఉన్నప్పుడు:
+
+🧩 Section-wise breakdown: Skills / Experience / Projects / Education match % విడివిడిగా
+🔎 Evidence list: matched keyword + అది resume లో ఏ exact line లో దొరికిందో
+Tab 2 (Builder) — Download row లో ఇప్పుడు 3 బటన్లు: HTML (పాతది) + DOCX + PDF (కొత్తవి, python-docx & fpdf2 వాడి)
+
+Tab 3 (Bullet Rewriter) — original line లో number ఉంటే దాన్నే వాడుతుంది; లేకపోతే fake % ఏమీ కలపదు, పైగా "no number found so none was invented" అని చెప్తుంది
+
+Run చేయడానికి కావాల్సిన కొత్త packages:
+
+pip install python-docx fpdf2
+(ఇవి లేకపోయినా app crash అవ్వదు — ఆ export బటన్లు మాత్రం disabled గా చూపిస్తుంది, install చెయ్యమని hint ఇస్తుంది.)
+
+
+Resume app
+PY 
+nenu install chesinakuda pdf dhi alne vastundhi
+
+
+Diagnosed persistent PDF functionality issue despite installation
+Diagnosed persistent PDF functionality issue despite installation
+ఇది సాధారణంగా 4 కారణాల్లో ఒకటి వల్ల జరుగుతుంది — చెక్ చేద్దాం:
+
+1. App restart అవ్వలేదు
+pip install చేసినా, Streamlit app ఇంకా పాత process లోనే running ఉంటే కొత్త package కనపడదు. కేవలం page refresh సరిపోదు — terminal లో app ని పూర్తిగా ఆపి (Ctrl+C) మళ్ళీ streamlit run resume_app.py అని start చేయాలి.
+
+2. వేరే Python environment లో install అయ్యింది
+మీరు pip install run చేసిన terminal, మరియు streamlit app run అయ్యే terminal/environment వేరైతే (virtualenv, conda env, లేదా online IDE లో వేరే kernel), package కనపడదు. చెక్ చెయ్యండి:
+
+bash
+which python
+which streamlit
+pip show fpdf2
+మూడూ ఒకే environment చూపిస్తున్నాయో లేదో confirm చేసుకోండి.
+
+3. Deployed/hosted app అయితే (Streamlit Cloud, Emergent, etc.)
+మీరు local terminal లో pip install చేస్తే అది మీ machine లో మాత్రమే install అవుతుంది — cloud/hosted deployment మీద install అవ్వదు. అలాంటప్పుడు requirements.txt ఫైల్‌లో ఇలా add చేసి, redeploy/reboot చేయాలి:
+
+python-docx
+fpdf2
+4. fpdf vs fpdf2 package name conflict
+పాత fpdf package కూడా install అయి ఉంటే conflict రావొచ్చు. క్లీన్‌గా చెయ్యడానికి:
+
+bash
+pip uninstall fpdf fpdf2 -y
+pip install fpdf2
+మీరు ఏ విధంగా app run చేస్తున్నారు (local terminal లో streamlit run, లేదా ఏదైనా hosted platform మీద)? అది చెప్తే సరైన కారణం ఏంటో exact గా చెప్పగలను.
+
+ayina alane vastundhi
+
+
+Analyzed query and formulated response
+Analyzed query and formulated response
+సరే, exact గా ఎక్కడ fail అవుతుందో తెలుసుకోడానికి, code లోనే error message చూపించేలా మార్చేద్దాం — అప్పుడు "install లేదు" అని generic గా కాకుండా, actual Python error ఏంటో మీకే కనిపిస్తుంది.
+
+
+Edited 4 files, ran a command, read a file
+Edited 4 files, ran a command, read a file
+ఇప్పుడు కొత్త file లో diagnostics add చేసాను. ఇలా చెయ్యండి:
+
+కొత్త file డౌన్‌లోడ్ చేసుకుని app run చేయండి
+Tab 2 లో export బటన్లు ఇంకా disabled గా ఉంటే, కింద "🔧 Why is export disabled? (diagnostics)" అనే expander కనిపిస్తుంది — దాన్ని click చేయండి
+అందులో actual Python error message, మరియు app ఏ Python executable వాడుతోందో చూపిస్తుంది
+ఆ expander లో వచ్చిన error text ని ఇక్కడ paste చేయండి — అప్పుడు exact గా ఏం సమస్యో చెప్పగలను (ఉదా: package name mismatch, version conflict, wrong environment, etc.).
+
+
+Resume app
+PY 
+
+Message collapsed
+
+Analyzed PDF generation code and encoding challenges
+Analyzed PDF generation code and encoding challenges
+ఇది ఒక వేరే/సులభమైన PDF generation code — మీ resume text ని PDF గా export చేయడానికి fpdf library వాడి రాసినది. Explain చేస్తాను:
+
+ఏం చేస్తుంది:
+
+PDF అనే class ని FPDF నుండి inherit చేసి define చేస్తుంది
+body() method — text ని PDF లో రాస్తుంది, కానీ ముందు దాన్ని latin-1 encoding కి convert చేస్తుంది (Telugu లాంటి Unicode characters ఉంటే error రాకుండా, వాటిని ? లాంటి replacement characters తో replace చేస్తుంది — encode("latin-1", "replace"))
+pdf.output(dest="S") — PDF ని string/bytes గా return చేస్తుంది
+st.download_button — ఆ PDF bytes ని download చేసుకోడానికి బటన్ చూపిస్తుంది
+ముఖ్యమైన విషయం — ఇదే మీ సమస్యకి కారణం కావొచ్చు:
+
+pdf.output(dest="S") అనేది పాత fpdf library యొక్క API. కానీ fpdf2 (కొత్త, maintained library) లో ఇది మారింది — dest parameter కొన్ని versions లో deprecated/removed అయ్యింది, మరియు కొత్త fpdf2 versions లో pdf.output() నేరుగా bytearray return చేస్తుంది (encode చేయాల్సిన అవసరం లేదు).
+
+కాబట్టి మీరు fpdf2 install చేసినా, ఈ code పాత API (dest="S") వాడుతుంటే TypeError లేదా similar error వస్తుంది — అదే మీకు "install చేసినా అలానే వస్తుంది" అనే సమస్యకి root cause అయ్యుండొచ్చు.
+
+Fix: రెండు versions తోనూ పనిచేసేలా safe గా రాయాలి:
+
+
+Ran a command
+Ran a command
+
+
+You are out of free messages until 7:10 PM
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Resume app · PY
 import streamlit as st
 import re
 import io
@@ -6,7 +189,7 @@ from collections import Counter
 import math
 import urllib.parse
 from PIL import Image
-
+ 
 # Multi-level PDF & File Extraction Libraries
 fitz_available = False
 try:
@@ -14,21 +197,21 @@ try:
     fitz_available = True
 except ImportError:
     fitz_available = False
-
+ 
 pdfplumber_available = False
 try:
     import pdfplumber
     pdfplumber_available = True
 except ImportError:
     pdfplumber_available = False
-
+ 
 pypdf_available = False
 try:
     import pypdf
     pypdf_available = True
 except ImportError:
     pypdf_available = False
-
+ 
 docx_available = False
 docx_import_error = ""
 try:
@@ -37,7 +220,7 @@ try:
 except Exception as e:
     docx_available = False
     docx_import_error = str(e)
-
+ 
 ocr_available = False
 try:
     import pytesseract
@@ -45,7 +228,7 @@ try:
     ocr_available = True
 except ImportError:
     ocr_available = False
-
+ 
 fpdf_available = False
 fpdf_import_error = ""
 try:
@@ -54,19 +237,19 @@ try:
 except Exception as e:
     fpdf_available = False
     fpdf_import_error = str(e)
-
+ 
 st.set_page_config(
     page_title="AI Resume Suite & Career Hub",
     page_icon="🚀",
     layout="wide"
 )
-
+ 
 st.title("🚀 Smart AI Resume Hub & All-in-One Career Suite")
-
+ 
 # Global Session State
 if "built_resume_text" not in st.session_state:
     st.session_state["built_resume_text"] = ""
-
+ 
 # All 7 Tabs Preserved
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
@@ -77,7 +260,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "✉️ HR Cold Outreach", 
     "🎤 AI Mock Interview"
 ])
-
+ 
 # 4-Layer Bulletproof Text Extractor
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
@@ -101,7 +284,7 @@ def extract_text_from_file(uploaded_file):
                             text += extracted + "\n"
                 except Exception:
                     text = ""
-
+ 
             # Layer 2: pdfplumber fallback
             if not text.strip() and pdfplumber_available:
                 try:
@@ -113,7 +296,7 @@ def extract_text_from_file(uploaded_file):
                                 text += extracted + "\n"
                 except Exception:
                     text = ""
-
+ 
             # Layer 3: pypdf fallback
             if not text.strip() and pypdf_available:
                 try:
@@ -125,7 +308,7 @@ def extract_text_from_file(uploaded_file):
                             text += extracted + "\n"
                 except Exception:
                     text = ""
-
+ 
             # Layer 4: OCR Engine for Scanned / Canva / Image PDFs
             if not text.strip() and ocr_available:
                 try:
@@ -136,7 +319,7 @@ def extract_text_from_file(uploaded_file):
                             text += extracted + "\n"
                 except Exception:
                     text = ""
-
+ 
         elif file_type in ["docx", "doc"]:
             if docx_available:
                 uploaded_file.seek(0)
@@ -144,7 +327,7 @@ def extract_text_from_file(uploaded_file):
                 for para in doc.paragraphs:
                     if para.text:
                         text += para.text + "\n"
-
+ 
         elif file_type in ["txt", "md"]:
             text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
             
@@ -152,11 +335,11 @@ def extract_text_from_file(uploaded_file):
         pass
         
     return text.strip()
-
+ 
 def text_to_vector(text):
     words = re.findall(r'\w+', text.lower())
     return Counter(words)
-
+ 
 def get_cosine_similarity(vec1, vec2):
     intersection = set(vec1.keys()) & set(vec2.keys())
     numerator = sum([vec1[x] * vec2[x] for x in intersection])
@@ -164,22 +347,22 @@ def get_cosine_similarity(vec1, vec2):
     sum2 = sum([vec2[x]**2 for x in list(vec2.keys())])
     denominator = math.sqrt(sum1) * math.sqrt(sum2)
     return float(numerator) / denominator if denominator else 0.0
-
+ 
 STOP_WORDS = {'and', 'the', 'for', 'with', 'you', 'this', 'that', 'from', 'have', 'will', 'are', 'your', 'our',
               'work', 'experience', 'looking', 'role', 'team', 'company', 'required', 'skills', 'good', 'must'}
-
+ 
 def get_missing_keywords(resume_text, jd_text):
     clean_resume = set(re.findall(r'\b[a-zA-Z]{3,}\b', resume_text.lower()))
     clean_jd = set(re.findall(r'\b[a-zA-Z]{3,}\b', jd_text.lower()))
     return list((clean_jd - STOP_WORDS) - (clean_resume - STOP_WORDS))[:12]
-
+ 
 def get_evidence_matches(resume_text, jd_text, limit=8):
     """For each JD keyword that IS present in the resume, find the exact resume line
     where it appears — this is the 'explainable / verbatim evidence' behind the score."""
     clean_resume = set(re.findall(r'\b[a-zA-Z]{3,}\b', resume_text.lower()))
     clean_jd = set(re.findall(r'\b[a-zA-Z]{3,}\b', jd_text.lower()))
     matched = list((clean_jd - STOP_WORDS) & (clean_resume - STOP_WORDS))
-
+ 
     resume_lines = [l.strip() for l in resume_text.split('\n') if l.strip()]
     evidence = []
     for kw in matched:
@@ -190,7 +373,7 @@ def get_evidence_matches(resume_text, jd_text, limit=8):
         if len(evidence) >= limit:
             break
     return evidence
-
+ 
 def get_section_text(text, keywords):
     """Pulls out the block of text under a heading that matches any of `keywords`,
     stopping at the next recognizable heading."""
@@ -207,7 +390,7 @@ def get_section_text(text, keywords):
         if capturing:
             result.append(line)
     return '\n'.join(result).strip()
-
+ 
 def extract_resume_sections(text):
     return {
         'skills': get_section_text(text, ['skills', 'technical skills', 'technologies']),
@@ -215,7 +398,7 @@ def extract_resume_sections(text):
         'projects': get_section_text(text, ['projects', 'academic projects']),
         'education': get_section_text(text, ['education', 'qualification', 'academic background']),
     }
-
+ 
 def calculate_section_scores(resume_text, jd_text):
     """Breaks the single match % into per-section scores so the user can see
     WHERE the match is strong or weak, instead of one opaque number."""
@@ -227,14 +410,14 @@ def calculate_section_scores(resume_text, jd_text):
         v1 = text_to_vector(content)
         scores[name] = round(get_cosine_similarity(v1, v2) * 100, 1)
     return scores
-
+ 
 def extract_job_title(jd_text):
     lines = jd_text.strip().split('\n')
     for line in lines[:5]:
         if any(term in line.lower() for term in ["title", "role", "engineer", "analyst", "developer", "designer", "manager"]):
             return re.sub(r'[^a-zA-Z0-9\s]', '', line).strip()
     return "Software Developer"
-
+ 
 def format_url(url):
     url = url.strip()
     if not url:
@@ -242,7 +425,7 @@ def format_url(url):
     if not url.startswith("http://") and not url.startswith("https://"):
         return "https://" + url
     return url
-
+ 
 def format_bullet_points(text):
     if not text.strip():
         return ""
@@ -268,7 +451,7 @@ def format_bullet_points(text):
         html_out += "</ul>"
         
     return html_out
-
+ 
 # ---------- No-fabrication bullet rewriter (Tab 3) ----------
 def rewrite_bullet_no_fabrication(bullet):
     """Rewrites a bullet with stronger verbs WITHOUT inventing metrics.
@@ -278,12 +461,12 @@ def rewrite_bullet_no_fabrication(bullet):
     numbers = re.findall(r'\d+(?:\.\d+)?%?\+?', bullet)
     has_metric = len(numbers) > 0
     metric = numbers[0] if has_metric else None
-
+ 
     core = re.sub(r'^(i|I)\s+(made|did|created|worked on|built|helped)\s+', '', bullet, flags=re.IGNORECASE).strip()
     core = core.rstrip('.')
     if not core:
         core = bullet.rstrip('.')
-
+ 
     if has_metric:
         opt1 = f"Engineered {core}, contributing to the {metric} result achieved."
         opt2 = f"Developed and implemented {core}, directly driving the {metric} outcome."
@@ -292,9 +475,9 @@ def rewrite_bullet_no_fabrication(bullet):
         opt1 = f"Engineered {core}, with a focus on reliability and maintainable design."
         opt2 = f"Developed and implemented {core}, streamlining the overall workflow."
         opt3 = f"Built {core} from the ground up, applying best practices for performance and scalability."
-
+ 
     return opt1, opt2, opt3, has_metric
-
+ 
 # ---------- DOCX / PDF export (Tab 2) ----------
 def build_section_list(objective, skills, experience, projects, education, certifications, languages):
     return [
@@ -306,14 +489,14 @@ def build_section_list(objective, skills, experience, projects, education, certi
         ("Certifications", certifications),
         ("Languages Spoken", languages),
     ]
-
+ 
 def generate_docx_resume(name, title, contact_line, objective, skills, experience, projects,
                           education, certifications, languages, declaration, dec_date, loc):
     doc = docx.Document()
     doc.add_heading(name, level=0)
     doc.add_paragraph(title)
     doc.add_paragraph(contact_line)
-
+ 
     for heading_text, content in build_section_list(objective, skills, experience, projects, education, certifications, languages):
         if content.strip():
             doc.add_heading(heading_text, level=2)
@@ -325,17 +508,17 @@ def generate_docx_resume(name, title, contact_line, objective, skills, experienc
                     doc.add_paragraph(line.lstrip('-*• ').strip(), style='List Bullet')
                 else:
                     doc.add_paragraph(line)
-
+ 
     if declaration.strip():
         doc.add_heading("Declaration", level=2)
         doc.add_paragraph(declaration)
         doc.add_paragraph(f"Date: {dec_date}    Location: {loc}    Signature: {name}")
-
+ 
     buf = io.BytesIO()
     doc.save(buf)
     buf.seek(0)
     return buf.getvalue()
-
+ 
 def generate_pdf_resume(name, title, contact_line, objective, skills, experience, projects,
                          education, certifications, languages, declaration, dec_date, loc):
     pdf = FPDF()
@@ -347,7 +530,7 @@ def generate_pdf_resume(name, title, contact_line, objective, skills, experience
     pdf.set_font("Helvetica", "", 10)
     pdf.multi_cell(0, 6, contact_line, align='C')
     pdf.ln(4)
-
+ 
     for heading_text, content in build_section_list(objective, skills, experience, projects, education, certifications, languages):
         if content.strip():
             pdf.set_font("Helvetica", "B", 13)
@@ -361,46 +544,46 @@ def generate_pdf_resume(name, title, contact_line, objective, skills, experience
                 clean_line = line.lstrip('-*• ').strip()
                 pdf.multi_cell(0, 6, bullet_prefix + clean_line)
             pdf.ln(2)
-
+ 
     if declaration.strip():
         pdf.set_font("Helvetica", "B", 13)
         pdf.cell(0, 8, "Declaration", ln=True)
         pdf.set_font("Helvetica", "", 10)
         pdf.multi_cell(0, 6, declaration)
         pdf.multi_cell(0, 6, f"Date: {dec_date}    Location: {loc}    Signature: {name}")
-
+ 
     raw = pdf.output()
     if isinstance(raw, str):
         raw = raw.encode('latin-1')
     return bytes(raw)
-
+ 
 # Sidebar Inputs
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
 resume_text_input = st.sidebar.text_area("OR Paste Resume Text", value=st.session_state["built_resume_text"], height=150)
-
+ 
 extracted_resume = extract_text_from_file(resume_file)
 resume_text = extracted_resume if extracted_resume != "" else resume_text_input
-
+ 
 if resume_file:
     if extracted_resume != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
     else:
         st.sidebar.warning("⚠️ Could not extract text. Please paste text in box below.")
-
+ 
 st.sidebar.divider()
-
+ 
 # Optional JD Toggle
 has_jd = st.sidebar.radio("Do you have a Job Description (JD) to match?", ["No (Check General Resume Score)", "Yes (Compare with Job Description)"])
-
+ 
 job_description = ""
 if has_jd == "Yes (Compare with Job Description)":
     jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
     jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
-
+ 
     extracted_jd = extract_text_from_file(jd_file)
     job_description = extracted_jd if extracted_jd != "" else jd_text_input
-
+ 
     if jd_file and extracted_jd != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
         
@@ -420,14 +603,14 @@ def calculate_general_resume_score(text):
     else:
         score += 15
         feedback.append("⚠️ **Too Long:** Try to condense your resume to 1-2 pages.")
-
+ 
     # 2. Key Sections Check
     text_lower = text.lower()
     sections = ['education', 'skills', 'experience', 'projects']
     found_sections = [s for s in sections if s in text_lower]
     score += len(found_sections) * 10  # Max 40 points
     feedback.append(f"✅ **Essential Sections Found:** Found {len(found_sections)}/4 key sections ({', '.join([s.capitalize() for s in found_sections])}).")
-
+ 
     # 3. Action Verbs Check
     action_words = ['developed', 'managed', 'created', 'built', 'designed', 'implemented', 'led', 'improved', 'analyzed', 'engineered']
     found_verbs = [v for v in action_words if v in text_lower]
@@ -437,17 +620,17 @@ def calculate_general_resume_score(text):
     else:
         score += 10
         feedback.append("💡 **Action Verbs:** Consider adding more action words (e.g., *Built, Engineered, Developed*).")
-
+ 
     # 4. Contact/Links Check
     if any(k in text_lower for k in ['email', '@', 'linkedin', 'github', 'phone']):
         score += 15
         feedback.append("✅ **Contact Information:** Contact or portfolio details detected.")
     else:
         feedback.append("⚠️ **Contact Info Missing:** Ensure your email or phone number is clearly stated.")
-
+ 
     return score, feedback
-
-
+ 
+ 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
     st.subheader("📊 Resume Score & Analysis")
@@ -464,7 +647,7 @@ with tab1:
                 missing_skills = get_missing_keywords(resume_text, job_description)
                 target_role = extract_job_title(job_description)
                 encoded_role = urllib.parse.quote(target_role)
-
+ 
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric(label="🎯 Job Match Score", value=f"{match_percentage}%")
@@ -477,7 +660,7 @@ with tab1:
                 with col2:
                     st.write("**Missing Keywords from JD:**")
                     st.write(", ".join([f"`{w}`" for w in missing_skills]) if missing_skills else "None! Excellent Job.")
-
+ 
                 # ---- NEW: Explainable, section-wise breakdown ----
                 st.divider()
                 st.markdown("### 🧩 Section-Wise Match Breakdown")
@@ -488,7 +671,7 @@ with tab1:
                 sc2.metric("Experience Match", f"{section_scores['experience']}%")
                 sc3.metric("Projects Match", f"{section_scores['projects']}%")
                 sc4.metric("Education Match", f"{section_scores['education']}%")
-
+ 
                 # ---- NEW: Evidence-based matched keywords (verbatim proof) ----
                 st.divider()
                 st.markdown("### 🔎 Explainable Evidence — Why These Keywords Matched")
@@ -499,7 +682,7 @@ with tab1:
                         st.write(f"✅ **`{kw}`** — found in: _\"{line}\"_")
                 else:
                     st.info("No direct keyword evidence found between resume and JD.")
-
+ 
                 st.divider()
                 st.subheader(f"💼 Live Job Openings: {target_role}")
                 c1, c2, c3 = st.columns(3)
@@ -509,7 +692,7 @@ with tab1:
                     st.link_button("Apply on Naukri 🚀", f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs", use_container_width=True)
                 with c3:
                     st.link_button("Apply on Indeed 🚀", f"https://www.indeed.com/jobs?q={encoded_role}", use_container_width=True)
-
+ 
             # CASE 2: USER DOES NOT HAVE A JOB DESCRIPTION (NO)
             else:
                 gen_score, feedback_list = calculate_general_resume_score(resume_text)
@@ -522,12 +705,12 @@ with tab1:
                     st.warning("⚠️ Good Resume, but can be improved further.")
                 else:
                     st.error("❌ Low Score. Consider adding missing sections or content.")
-
+ 
                 st.divider()
                 st.markdown("### 🔍 ATS Quality Feedback Summary:")
                 for item in feedback_list:
                     st.write(item)
-
+ 
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
     st.subheader("✏️ Resume Upload & Interactive Editor")
@@ -545,7 +728,7 @@ with tab2:
     if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = ""
     if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = ""
     if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = ""
-
+ 
     # 1. File Upload Section
     uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
     
@@ -567,7 +750,7 @@ with tab2:
                 # Phone Number Extraction Regex/Check
                 phones = re.findall(r'[\+\(]?[0-9][0-9\-\s\(\)]{8,}[0-9]', extracted_raw)
                 if phones: st.session_state["ed_phone"] = phones[0]
-
+ 
                 # Section Extraction Logic based on Headings (uses the shared get_section_text helper)
                 parsed_obj = get_section_text(extracted_raw, ['objective', 'summary', 'profile'])
                 parsed_skills = get_section_text(extracted_raw, ['skills', 'technical skills', 'technologies'])
@@ -575,7 +758,7 @@ with tab2:
                 parsed_proj = get_section_text(extracted_raw, ['projects', 'academic projects'])
                 parsed_edu = get_section_text(extracted_raw, ['education', 'qualification', 'academic background'])
                 parsed_cert = get_section_text(extracted_raw, ['certifications', 'certificates'])
-
+ 
                 if parsed_obj: st.session_state["ed_obj"] = parsed_obj
                 if parsed_skills: st.session_state["ed_skills"] = parsed_skills
                 if parsed_exp: st.session_state["ed_exp"] = parsed_exp
@@ -583,17 +766,17 @@ with tab2:
                 if parsed_proj: st.session_state["ed_proj"] = parsed_proj
                 if parsed_edu: st.session_state["ed_edu"] = parsed_edu
                 if parsed_cert: st.session_state["ed_cert"] = parsed_cert
-
+ 
                 st.success("✅ Resume details loaded & filled into editor boxes! You can edit them below.")
             else:
                 st.error("Could not extract text from this file. Please make sure it's a readable PDF or DOCX file.")
-
+ 
     st.divider()
-
+ 
     theme_choice = st.radio("🎨 Choose Resume Theme:", ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"], horizontal=True)
-
+ 
     b_col1, b_col2 = st.columns([1, 1])
-
+ 
     with b_col1:
         st.markdown("### 📝 Edit Resume Sections")
         
@@ -605,7 +788,7 @@ with tab2:
         location = st.text_input("Location", value=st.session_state["ed_loc"], placeholder="e.g., Hyderabad, India")
         linkedin = st.text_input("LinkedIn Profile URL", value="", placeholder="https://www.linkedin.com/in/yourprofile")
         github = st.text_input("GitHub Profile URL", value="", placeholder="https://github.com/yourusername")
-
+ 
         st.markdown("---")
         objective = st.text_area("Edit Objective / Summary", value=st.session_state["ed_obj"], placeholder="Career objective or summary...", height=90)
         skills = st.text_area("Edit Skills", value=st.session_state["ed_skills"], placeholder="- Python, SQL, Streamlit...", height=110)
@@ -616,20 +799,20 @@ with tab2:
         languages = st.text_area("Languages Spoken", value="- English\n- Telugu", height=70)
         declaration = st.text_area("Declaration Statement", value="I hereby declare that all information provided is accurate to the best of my knowledge.", height=70)
         dec_date = st.text_input("Date", value="", placeholder="DD/MM/YYYY")
-
+ 
         # Fallbacks for live preview display
         p_name = full_name if full_name.strip() else "Your Full Name"
         p_title = title if title.strip() else "Professional Title"
         p_email = email if email.strip() else "email@example.com"
         p_phone = phone if phone.strip() else "+91 9876543210"
         p_loc = location if location.strip() else "City, Country"
-
+ 
         # Sync edited content with Tab 1 (Analyzer)
         edited_full_text = f"{p_name}\n{p_title}\n{objective}\n{skills}\n{experience}\n{projects}\n{education}\n{certifications}"
         if st.button("🔄 Sync Edited Resume with Analyzer"):
             st.session_state["built_resume_text"] = edited_full_text
             st.success("✅ Changes synced! Go to Tab 1 to check ATS score of this updated resume.")
-
+ 
     with b_col2:
         st.markdown("### 👁️ Live Updated Preview")
         
@@ -639,10 +822,10 @@ with tab2:
             primary_color, title_color, header_bg = "#B45309", "#1F2937", "#FFFBEB"
         else:
             primary_color, title_color, header_bg = "#0F172A", "#64748B", "#F8FAFC"
-
+ 
         linkedin_url = format_url(linkedin) if linkedin.strip() else ""
         github_url = format_url(github) if github.strip() else ""
-
+ 
         contact_items = [f"📍 {p_loc}", f"📞 {p_phone}", f"📧 {p_email}"]
         if linkedin_url:
             contact_items.append(f"<a href='{linkedin_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{linkedin.strip()}</a>")
@@ -655,7 +838,7 @@ with tab2:
             contact_plain += f" | {linkedin.strip()}"
         if github.strip():
             contact_plain += f" | {github.strip()}"
-
+ 
         obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3>{format_bullet_points(objective)}" if objective.strip() else ""
         edu_s = f"<h3 style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}" if education.strip() else ""
         skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
@@ -664,7 +847,7 @@ with tab2:
         exp_s = f"<h3 style='color:{primary_color};'>Experience / Internship</h3>{format_bullet_points(experience)}" if experience.strip() else ""
         lng_s = f"<h3 style='color:{primary_color};'>Languages Spoken</h3>{format_bullet_points(languages)}" if languages.strip() else ""
         dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
-
+ 
         html_resume = f"""
         <!DOCTYPE html>
         <html>
@@ -711,10 +894,10 @@ with tab2:
         """
         st.markdown(html_resume, unsafe_allow_html=True)
         st.write("")
-
+ 
         # ---- Export row: HTML (existing) + NEW DOCX + NEW PDF ----
         exp_col1, exp_col2, exp_col3 = st.columns(3)
-
+ 
         with exp_col1:
             st.download_button(
                 label="📥 Download HTML",
@@ -724,7 +907,7 @@ with tab2:
                 type="primary",
                 use_container_width=True
             )
-
+ 
         with exp_col2:
             if docx_available:
                 docx_bytes = generate_docx_resume(
@@ -740,7 +923,7 @@ with tab2:
                 )
             else:
                 st.button("📄 DOCX (install python-docx)", disabled=True, use_container_width=True)
-
+ 
         with exp_col3:
             if fpdf_available:
                 pdf_bytes = generate_pdf_resume(
@@ -756,7 +939,7 @@ with tab2:
                 )
             else:
                 st.button("🧾 PDF (install fpdf2)", disabled=True, use_container_width=True)
-
+ 
         if not docx_available or not fpdf_available:
             st.caption("💡 Run `pip install python-docx fpdf2` to enable all export formats.")
             with st.expander("🔧 Why is export disabled? (diagnostics)"):
@@ -770,7 +953,7 @@ with tab2:
                 st.code(sys.executable, language="text")
                 st.write("Run this in the SAME environment the app is launched from:")
                 st.code("pip show fpdf2\npip show python-docx", language="bash")
-
+ 
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
     st.subheader("✨ Action-Oriented Bullet Point Improver")
@@ -779,15 +962,15 @@ with tab3:
     if st.button("Enhance Bullet Point ✨"):
         if raw_bullet.strip():
             opt1, opt2, opt3, has_metric = rewrite_bullet_no_fabrication(raw_bullet)
-
+ 
             if not has_metric:
                 st.caption("ℹ️ No number was found in your original line, so none was invented. Add a real metric (%, count, time saved) to your resume for stronger rewrites.")
-
+ 
             st.markdown("### 🌟 Suggested Action-Oriented Options:")
             st.info(f"👉 **Option 1 (Technical Focus):** '{opt1}'")
             st.success(f"👉 **Option 2 (Action Focus):** '{opt2}'")
             st.warning(f"👉 **Option 3 (Outcome Focus):** '{opt3}'")
-
+ 
 # ==================== TAB 4: SMART PLACEMENT & RED FLAGS ====================
 with tab4:
     st.subheader("💡 ATS Keyword Placement & Red Flag Detector")
@@ -797,7 +980,7 @@ with tab4:
         if missing:
             for i, kw in enumerate(missing[:6]):
                 st.info(f"**Keyword:** `{kw.capitalize()}` ➔ **Suggested Bullet:** *'Successfully utilized {kw} in hands-on projects to improve workflow and optimization.'* (Add to **Skills/Projects** section)")
-
+ 
         st.divider()
         st.markdown("### 🚩 Resume Weakness & Cliché Detector")
         cliches = ['hardworking', 'honest', 'team player', 'self motivated', 'go getter', 'fast learner']
@@ -806,7 +989,7 @@ with tab4:
             st.warning(f"⚠️ Found Overused Buzzwords: {', '.join(found_cliches)}")
         else:
             st.success("✅ Clean Resume! No weak buzzwords detected.")
-
+ 
 # ==================== TAB 5: SALARY PREDICTOR ====================
 with tab5:
     st.subheader("💰 Market Experience & Salary Range Predictor")
@@ -816,12 +999,12 @@ with tab5:
         exp_years = int(exp_match.group(1)) if exp_match else 2
         base_pay = 4 + (exp_years * 2.5)
         st.metric("Predicted Annual Package (India Market)", f"₹{base_pay:.1f} LPA - ₹{base_pay + 5:.1f} LPA")
-
+ 
 # ==================== TAB 6: HR COLD OUTREACH ====================
 with tab6:
     st.subheader("✉️ HR Cold Outreach & Referral Generator")
     st.write("Based on your resume details, professional emails and LinkedIn messages for HR or recruiters will be generated here.")
-
+ 
     # Get candidate details from active session or input
     candidate_name = p_name if 'p_name' in locals() and p_name != "Your Full Name" else "Candidate"
     candidate_skills = skills if 'skills' in locals() and skills.strip() else "Software Development, Problem Solving"
@@ -829,57 +1012,57 @@ with tab6:
     st.markdown("### 🎯 Outreach Options")
     target_company = st.text_input("Enter Target Company Name", placeholder="e.g., TCS, Google, Infosys")
     job_role = st.text_input("Enter Job Role You're Applying For", placeholder="e.g., Software Engineer, Data Analyst")
-
+ 
     if st.button("🚀 Generate Outreach Messages", type="primary"):
         if not target_company or not job_role:
             st.warning("Please enter both Target Company Name and Job Role above!")
         else:
             comp_name = target_company.strip()
             role_name = job_role.strip()
-
+ 
             st.divider()
             
             # 1. Cold Email Template
             st.markdown("### 📧 1. Personalized HR Cold Email")
             email_subject = f"Application for {role_name} Position - {candidate_name}"
             email_body = f"""Dear Hiring Team at {comp_name},
-
+ 
 I hope this email finds you well.
-
+ 
 I am reaching out to express my strong interest in the {role_name} position at {comp_name}. With my background in {candidate_skills[:80]}..., I am confident in my ability to add immediate value to your engineering team.
-
+ 
 Key highlights from my experience:
 - Hands-on expertise in key industry domains and modern tech stack.
 - Proven track record of delivering clean code and working on end-to-end projects.
-
+ 
 I have attached my resume for your review. I would welcome the opportunity to discuss how my skill set aligns with the goals of {comp_name}.
-
+ 
 Thank you for your time and consideration.
-
+ 
 Best regards,
 {candidate_name}
 """
             st.code(f"Subject: {email_subject}\n\n{email_body}", language="text")
-
+ 
             # 2. LinkedIn Connection Note
             st.markdown("### 💼 2. LinkedIn Recruiter Message (Under 300 Chars)")
             linkedin_msg = f"Hi, I noticed active engineering roles at {comp_name}. As a {role_name} skilled in {candidate_skills[:40]}..., I’d love to connect and learn more about opportunities on your team. Thanks! - {candidate_name}"
             st.code(linkedin_msg, language="text")
-
+ 
             # 3. Elevator Pitch (30 Sec Intro)
             st.markdown("### 🎙️ 3. Elevator Pitch (For HR Calls)")
             pitch = f"Hi, I'm {candidate_name}. I specialize in {candidate_skills[:60]}... I recently built projects focusing on core domain solutions, and I am actively looking for a {role_name} role at {comp_name} where I can deliver impactful results."
             st.info(f"**Your Pitch:** {pitch}")
-
-
+ 
+ 
 # ==================== TAB 7: AI MOCK INTERVIEW ====================
 with tab7:
     st.subheader("🎤 AI Mock Interview Assistant")
     st.write("Based on your resume's projects and skills, here are the most important interview questions you might be asked.")
-
+ 
     # Determine Active Resume Text
     active_resume_text = resume_text if 'resume_text' in locals() and resume_text.strip() else edited_full_text if 'edited_full_text' in locals() else ""
-
+ 
     if st.button("🎯 Generate Interview Questions from My Resume", type="primary"):
         if not active_resume_text.strip():
             st.error("Please upload or edit a resume first to generate questions!")
@@ -897,7 +1080,7 @@ with tab7:
             * **Q3: Describe a challenge you faced during a project and how you solved it.**
               > *Tip:* Use the **STAR Method** (Situation, Task, Action, Result).
             """)
-
+ 
             st.markdown("---")
             
             st.markdown("### 🛠️ 2. Domain & Resume Specific Technical Questions")
@@ -921,7 +1104,7 @@ with tab7:
             
             # Fallback general technical question
             st.markdown(f"**Q{q_count}: How do you test and debug your code before submitting a project?**")
-
+ 
             st.divider()
             st.markdown("### ✍️ Practice Your Answer")
             user_ans = st.text_area("Type your answer here to practice:", placeholder="Write your response here...")
@@ -930,3 +1113,4 @@ with tab7:
                     st.success("👍 Good response! You explained with sufficient details. Make sure to keep your tone clear and confident during the live call.")
                 else:
                     st.warning("⚠️ Your response seems a bit brief. Try adding specific examples or technical details using the STAR method.")
+ 
