@@ -609,12 +609,28 @@ with tab1:
                         st.write(f"🔹 **`{kw}`** — _\"{line}\"_")
 
                 st.divider()
-                st.subheader(f"🔗 Live Job Openings: {target_role}")
-                st.link_button(
-                    "Apply on LinkedIn 💼",
-                    f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
-                    use_container_width=True,
-                )
+st.subheader(f"🔗 Live Job Openings: {target_role}")
+
+# 3 Job Platforms Buttons Side-by-Side
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.link_button(
+        "Apply on LinkedIn 💼",
+        f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
+        use_container_width=True,
+    )
+with c2:
+    st.link_button(
+        "Apply on Naukri 🚀",
+        f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs",
+        use_container_width=True,
+    )
+with c3:
+    st.link_button(
+        "Apply on Indeed 🔍",
+        f"https://www.indeed.com/jobs?q={encoded_role}",
+        use_container_width=True,
+    )
 
             # CASE 2: GENERAL SCORE (NO JD)
             else:
