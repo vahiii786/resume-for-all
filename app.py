@@ -339,24 +339,10 @@ with tab2:
     # 1. File Upload to Edit
     uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
     
-    # Generic Placeholder State Setup (No Personal Details)
-    if "ed_name" not in st.session_state: st.session_state["ed_name"] = "John Doe"
-    if "ed_title" not in st.session_state: st.session_state["ed_title"] = "Software Engineer / Professional Title"
-    if "ed_email" not in st.session_state: st.session_state["ed_email"] = "johndoe@example.com"
-    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = "+1 123 456 7890"
-    if "ed_loc" not in st.session_state: st.session_state["ed_loc"] = "City, Country"
-    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = "Motivated professional seeking to leverage skills in software development and problem-solving to contribute to company growth."
-    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = "- Degree Name | University / College Name (Year - Year)\n- Higher Secondary | School Name (Year - Year)"
-    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = "- Technical Skills: Programming Languages, Frameworks, Tools\n- Databases: SQL, Database Management\n- Core Concepts: Problem Solving, Web Development"
-    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = "- Job Title | Company Name (Year - Present)\n  - Key achievement or daily responsibility using action verbs.\n  - Managed project deliverables and collaborated with cross-functional teams."
-    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = "- Project Title | Core Technologies Used\n  - Brief description of project features and functionality.\n  - Outcome or metric achieved through project deployment."
-    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = "- Certification Name | Issuing Organization (Year)"
-
     if uploaded_edit_file is not None:
         if st.button("📥 Load Uploaded Text into Editor"):
             extracted_raw = extract_text_from_file(uploaded_edit_file)
             if extracted_raw:
-                # Load extracted content into editable experience state
                 st.session_state["ed_exp"] = extracted_raw
                 st.success("✅ Text loaded successfully! You can now edit/modify all text below.")
             else:
@@ -371,27 +357,39 @@ with tab2:
     with b_col1:
         st.markdown("### 📝 Edit Resume Sections")
         
-        full_name = st.text_input("Full Name", st.session_state["ed_name"])
-        title = st.text_input("Professional Title", st.session_state["ed_title"])
-        email = st.text_input("Email", st.session_state["ed_email"])
-        phone = st.text_input("Phone Number", st.session_state["ed_phone"])
-        location = st.text_input("Location", st.session_state["ed_loc"])
-        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/yourprofile")
-        github = st.text_input("GitHub Profile URL", "https://github.com/yourusername")
+        # Using placeholder so text auto-clears on user click/type
+        full_name = st.text_input("Full Name", value="", placeholder="e.g., John Doe")
+        title = st.text_input("Professional Title", value="", placeholder="e.g., Software Engineer / Data Analyst")
+        email = st.text_input("Email", value="", placeholder="e.g., johndoe@example.com")
+        phone = st.text_input("Phone Number", value="", placeholder="e.g., +91 9876543210")
+        location = st.text_input("Location", value="", placeholder="e.g., Hyderabad, India")
+        linkedin = st.text_input("LinkedIn Profile URL", value="", placeholder="e.g., https://www.linkedin.com/in/yourprofile")
+        github = st.text_input("GitHub Profile URL", value="", placeholder="e.g., https://github.com/yourusername")
 
         st.markdown("---")
-        objective = st.text_area("Edit Objective / Summary", st.session_state["ed_obj"], height=100)
-        skills = st.text_area("Edit Skills (Use - for bullet points)", st.session_state["ed_skills"], height=120)
-        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", st.session_state["ed_exp"], height=180)
-        projects = st.text_area("Edit Projects", st.session_state["ed_proj"], height=120)
-        education = st.text_area("Edit Education", st.session_state["ed_edu"], height=100)
-        certifications = st.text_area("Edit Certifications (Optional)", st.session_state["ed_cert"], height=80)
-        languages = st.text_area("Languages Spoken", "- English\n- Local Language")
-        declaration = st.text_area("Declaration Statement", "I hereby declare that all information provided is accurate to the best of my knowledge.")
-        dec_date = st.text_input("Date", "")
+        objective = st.text_area("Edit Objective / Summary", value="", placeholder="e.g., Motivated professional seeking to leverage skills in software development...", height=90)
+        skills = st.text_area("Edit Skills (Use - for bullet points)", value="", placeholder="- Technical Skills: Python, SQL\n- Frameworks: Streamlit, React\n- Tools: Git, VS Code", height=110)
+        
+        # Experience uses session_state if loaded from file, else uses placeholder
+        exp_val = st.session_state.get("ed_exp", "")
+        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", value=exp_val, placeholder="- Job Title | Company Name (Year - Present)\n  - Main achievement or daily responsibility using action verbs.", height=150)
+        
+        projects = st.text_area("Edit Projects", value="", placeholder="- Project Title | Technologies Used\n  - Brief description of features and functionality.", height=120)
+        education = st.text_area("Edit Education", value="", placeholder="- Degree Name | College/University Name (Year)\n- High School | School Name (Year)", height=100)
+        certifications = st.text_area("Edit Certifications (Optional)", value="", placeholder="- Certification Name | Issuing Organization (Year)", height=80)
+        languages = st.text_area("Languages Spoken", value="", placeholder="- English\n- Telugu", height=80)
+        declaration = st.text_area("Declaration Statement", value="I hereby declare that all information provided is accurate to the best of my knowledge.", height=80)
+        dec_date = st.text_input("Date", value="", placeholder="e.g., DD/MM/YYYY")
+
+        # Fallbacks for live preview if input is empty
+        p_name = full_name if full_name.strip() else "John Doe"
+        p_title = title if title.strip() else "Professional Title"
+        p_email = email if email.strip() else "email@example.com"
+        p_phone = phone if phone.strip() else "+91 9876543210"
+        p_loc = location if location.strip() else "City, Country"
 
         # Sync edited content with Tab 1 (Analyzer)
-        edited_full_text = f"{full_name}\n{title}\n{objective}\n{skills}\n{experience}\n{projects}\n{education}\n{certifications}"
+        edited_full_text = f"{p_name}\n{p_title}\n{objective}\n{skills}\n{experience}\n{projects}\n{education}\n{certifications}"
         if st.button("🔄 Sync Edited Resume with Analyzer"):
             st.session_state["built_resume_text"] = edited_full_text
             st.success("✅ Changes synced! Go to Tab 1 to check ATS score of this updated resume.")
@@ -406,13 +404,13 @@ with tab2:
         else:
             primary_color, title_color, header_bg = "#0F172A", "#64748B", "#F8FAFC"
 
-        linkedin_url = format_url(linkedin)
-        github_url = format_url(github)
+        linkedin_url = format_url(linkedin) if linkedin.strip() else ""
+        github_url = format_url(github) if github.strip() else ""
 
-        contact_items = [f"📍 {location}", f"📞 {phone}", f"📧 {email}"]
-        if linkedin.strip():
+        contact_items = [f"📍 {p_loc}", f"📞 {p_phone}", f"📧 {p_email}"]
+        if linkedin_url:
             contact_items.append(f"<a href='{linkedin_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{linkedin.strip()}</a>")
-        if github.strip():
+        if github_url:
             contact_items.append(f"<a href='{github_url}' target='_blank' style='color:{primary_color}; text-decoration: underline;'>{github.strip()}</a>")
         
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
@@ -422,8 +420,8 @@ with tab2:
         skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
         crt_s = f"<h3 style='color:{primary_color};'>Certifications</h3>{format_bullet_points(certifications)}" if certifications.strip() else ""
         prj_s = f"<h3 style='color:{primary_color};'>Projects</h3>{format_bullet_points(projects)}" if projects.strip() else ""
-        exp_s = f"<h3 style='color:{primary_color};'>Experience / Career History</h3>{format_bullet_points(experience)}" if experience.strip() else ""
-        lng_s = f"<h3 style='color:{primary_color};'>Languages</h3>{format_bullet_points(languages)}" if languages.strip() else ""
+        exp_s = f"<h3 style='color:{primary_color};'>Experience / Internship</h3>{format_bullet_points(experience)}" if experience.strip() else ""
+        lng_s = f"<h3 style='color:{primary_color};'>Languages Spoken</h3>{format_bullet_points(languages)}" if languages.strip() else ""
         dec_s = f"<h3 style='color:{primary_color};'>Declaration</h3><p>{declaration}</p>" if declaration.strip() else ""
 
         html_resume = f"""
@@ -448,8 +446,8 @@ with tab2:
         <body>
             <div class="resume-card">
                 <div class="header-container">
-                    <h1>{full_name}</h1>
-                    <div class="title">{title}</div>
+                    <h1>{p_name}</h1>
+                    <div class="title">{p_title}</div>
                     <div class="contact">{contact_html}</div>
                 </div>
                 <hr>
@@ -458,8 +456,8 @@ with tab2:
                 
                 <table class="footer-table">
                     <tr>
-                        <td><strong>Location:</strong> {location}</td>
-                        <td style="text-align: right;"><strong>Signature:</strong> {full_name}</td>
+                        <td><strong>Location:</strong> {p_loc}</td>
+                        <td style="text-align: right;"><strong>Signature:</strong> {p_name}</td>
                     </tr>
                     <tr>
                         <td><strong>Date:</strong> {dec_date}</td>
@@ -475,7 +473,7 @@ with tab2:
         st.download_button(
             label="📥 Download Edited Resume (Press Ctrl+P for PDF)",
             data=html_resume,
-            file_name=f"{full_name.replace(' ', '_')}_Edited_Resume.html",
+            file_name=f"{p_name.replace(' ', '_')}_Resume.html",
             mime="text/html",
             type="primary",
             use_container_width=True
