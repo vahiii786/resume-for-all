@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 import io
+import sys
 from collections import Counter
 import math
 import urllib.parse
@@ -29,11 +30,13 @@ except ImportError:
     pypdf_available = False
 
 docx_available = False
+docx_import_error = ""
 try:
     import docx  # python-docx (used for both reading uploads and writing exports)
     docx_available = True
-except ImportError:
+except Exception as e:
     docx_available = False
+    docx_import_error = str(e)
 
 ocr_available = False
 try:
@@ -44,11 +47,13 @@ except ImportError:
     ocr_available = False
 
 fpdf_available = False
+fpdf_import_error = ""
 try:
     from fpdf import FPDF
     fpdf_available = True
-except ImportError:
+except Exception as e:
     fpdf_available = False
+    fpdf_import_error = str(e)
 
 st.set_page_config(
     page_title="AI Resume Suite & Career Hub",
@@ -754,6 +759,17 @@ with tab2:
 
         if not docx_available or not fpdf_available:
             st.caption("💡 Run `pip install python-docx fpdf2` to enable all export formats.")
+            with st.expander("🔧 Why is export disabled? (diagnostics)"):
+                st.write(f"**python-docx available:** {docx_available}")
+                if docx_import_error:
+                    st.code(docx_import_error, language="text")
+                st.write(f"**fpdf2 available:** {fpdf_available}")
+                if fpdf_import_error:
+                    st.code(fpdf_import_error, language="text")
+                st.write("**Python executable in use:**")
+                st.code(sys.executable, language="text")
+                st.write("Run this in the SAME environment the app is launched from:")
+                st.code("pip show fpdf2\npip show python-docx", language="bash")
 
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
