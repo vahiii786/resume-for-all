@@ -442,8 +442,9 @@ has_jd = st.sidebar.radio("Do you have a Job Description (JD) to match?", ["No (
 
 # ------------ SIDEBAR: JOB DESCRIPTION SECTION ------------
 has_jd = st.sidebar.radio(
-    "Job Description ఉందా?",
-    ("No (General Resume Review)", "Yes (Compare with Job Description)"),
+    "Do you have a Job Description (JD) to match?",
+    ("No (Check General Resume Score)", "Yes (Compare with Job Description)"),
+    key="has_jd_radio",
 )
 
 job_description = ""
@@ -451,11 +452,11 @@ job_description = ""
 if has_jd == "Yes (Compare with Job Description)":
     st.sidebar.markdown("---")
 
-    # 💡 AUTO-GENERATE JD FEATURE
+    # 💡 AI JD GENERATOR FEATURE
     if resume_text.strip():
         st.sidebar.subheader("✨ AI JD Generator")
 
-        # 1. Resume ని బట్టి Target Domains / Roles ని ఆటోమేటిక్‌గా గుర్తించడం
+        # 1. Detect domain based on Resume content
         resume_lower = resume_text.lower()
         suggested_roles = []
 
@@ -506,22 +507,19 @@ if has_jd == "Yes (Compare with Job Description)":
                 "Project Manager",
             ]
 
-        # డ్యూప్లికేట్స్ లేకుండా యూనిక్ లిస్ట్ చేయడం
+        # Deduplicate list
         suggested_roles = list(dict.fromkeys(suggested_roles))
-        suggested_roles.insert(0, "-- రికమండ్ చేసిన జాబ్ రోల్‌ని ఎంచుకోండి --")
+        suggested_roles.insert(0, "-- Select Suggested Job Profile --")
 
         selected_domain = st.sidebar.selectbox(
-            "🎯 మీ Resume బట్టి సరిపోయే జాబ్ ప్రొఫైల్స్:",
+            "🎯 Matching Job Profiles based on Resume:",
             suggested_roles,
             key="jd_domain_selectbox",
         )
 
-        # 2. యూజర్ రోల్ ఎంచుకున్నప్పుడు ఆటోమేటిక్‌గా Perfect Template JD ని సిద్ధం చేయడం
+        # 2. Generate Professional JD based on selected role
         auto_jd_text = ""
-        if (
-            selected_domain
-            and selected_domain != "-- రికమండ్ చేసిన జాబ్ రోల్‌ని ఎంచుకోండి --"
-        ):
+        if selected_domain and selected_domain != "-- Select Suggested Job Profile --":
 
             if selected_domain in [
                 "Data Analyst",
@@ -593,23 +591,21 @@ Required Qualifications & Skills:
 - Proficiency in Python, Problem Solving, Data Analysis, and Communication.
 - Hands-on experience with tools like Git, Excel, and relevant technical frameworks."""
 
-            st.sidebar.success(
-                f"✅ '{selected_domain}' రికమండెడ్ JD సిద్ధమైంది!"
-            )
+            st.sidebar.success(f"✅ Generated JD for '{selected_domain}'")
 
-        # Job Description Text Area (Auto-filled if generated, or editable by user)
+        # Job Description Text Area (Auto-filled or editable)
         job_description = st.sidebar.text_area(
             "Job Description (JD)",
             value=auto_jd_text,
             height=200,
-            placeholder="ఇక్కడ Job Description పేస్ట్ చేయండి లేదా పైన డ్రాప్‌డౌన్ నుండి ఆటో-జనరేట్ చేసుకోండి...",
+            placeholder="Paste Job Description here or select a role from dropdown above to auto-generate...",
         )
     else:
-        st.sidebar.info("💡 JD ఆటో-జనరేషన్ సూచనల కోసం మొదట మీ Resume ని అప్‌లోడ్ చేయండి.")
+        st.sidebar.info("💡 Upload your Resume first to get AI JD recommendations.")
         job_description = st.sidebar.text_area(
             "Job Description (JD)",
             height=200,
-            placeholder="ఇక్కడ Job Description పేస్ట్ చేయండి...",
+            placeholder="Paste Job Description here...",
         )
 # General Resume Quality Calculator (When NO JD is provided)
 def calculate_general_resume_score(text):
