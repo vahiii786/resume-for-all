@@ -1,8 +1,5 @@
 streamlit
-scikit-learn
 pypdf
-python-docx
-pytesseract
-Pillow
-reportlab
 pdfplumber
+python-docx
+PyMuPDF
