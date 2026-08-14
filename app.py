@@ -334,29 +334,29 @@ with tab1:
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
     st.subheader("✏️ Resume Upload & Interactive Editor")
-    st.write("అప్లోడ్ చేసిన రెజ్యూమ్‌లోని వివరాలను కింద ఉన్న బాక్సులలో నేరుగా ఎడిట్ లేదా మార్పులు చేసుకోవచ్చు.")
+    st.write("అప్లోడ్ చేసిన రెజ్యూమ్‌లోని వివరాలను లేదా కొత్త వివరాలను కింద ఉన్న బాక్సులలో నేరుగా ఎడిట్ లేదా మార్పులు చేసుకోవచ్చు.")
     
     # 1. File Upload to Edit
     uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
     
-    # State setup for dynamic editing
-    if "ed_name" not in st.session_state: st.session_state["ed_name"] = "Your Full Name"
-    if "ed_title" not in st.session_state: st.session_state["ed_title"] = "Professional Title"
-    if "ed_email" not in st.session_state: st.session_state["ed_email"] = "email@example.com"
-    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = "+91 9876543210"
+    # Generic Placeholder State Setup (No Personal Details)
+    if "ed_name" not in st.session_state: st.session_state["ed_name"] = "John Doe"
+    if "ed_title" not in st.session_state: st.session_state["ed_title"] = "Software Engineer / Professional Title"
+    if "ed_email" not in st.session_state: st.session_state["ed_email"] = "johndoe@example.com"
+    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = "+1 123 456 7890"
     if "ed_loc" not in st.session_state: st.session_state["ed_loc"] = "City, Country"
-    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = ""
-    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = "- Degree | College Name (Year)"
-    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = "- Technical Skills: Python, SQL..."
-    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = ""
-    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = "- Project Name: Description"
-    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = ""
+    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = "Motivated professional seeking to leverage skills in software development and problem-solving to contribute to company growth."
+    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = "- Degree Name | University / College Name (Year - Year)\n- Higher Secondary | School Name (Year - Year)"
+    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = "- Technical Skills: Programming Languages, Frameworks, Tools\n- Databases: SQL, Database Management\n- Core Concepts: Problem Solving, Web Development"
+    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = "- Job Title | Company Name (Year - Present)\n  - Key achievement or daily responsibility using action verbs.\n  - Managed project deliverables and collaborated with cross-functional teams."
+    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = "- Project Title | Core Technologies Used\n  - Brief description of project features and functionality.\n  - Outcome or metric achieved through project deployment."
+    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = "- Certification Name | Issuing Organization (Year)"
 
     if uploaded_edit_file is not None:
         if st.button("📥 Load Uploaded Text into Editor"):
             extracted_raw = extract_text_from_file(uploaded_edit_file)
             if extracted_raw:
-                # Load extracted content into editable experience/raw state
+                # Load extracted content into editable experience state
                 st.session_state["ed_exp"] = extracted_raw
                 st.success("✅ Text loaded successfully! You can now edit/modify all text below.")
             else:
@@ -376,17 +376,17 @@ with tab2:
         email = st.text_input("Email", st.session_state["ed_email"])
         phone = st.text_input("Phone Number", st.session_state["ed_phone"])
         location = st.text_input("Location", st.session_state["ed_loc"])
-        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/")
-        github = st.text_input("GitHub Profile URL", "https://github.com/")
+        linkedin = st.text_input("LinkedIn Profile URL", "https://www.linkedin.com/in/yourprofile")
+        github = st.text_input("GitHub Profile URL", "https://github.com/yourusername")
 
         st.markdown("---")
         objective = st.text_area("Edit Objective / Summary", st.session_state["ed_obj"], height=100)
         skills = st.text_area("Edit Skills (Use - for bullet points)", st.session_state["ed_skills"], height=120)
-        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", st.session_state["ed_exp"], height=200)
+        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", st.session_state["ed_exp"], height=180)
         projects = st.text_area("Edit Projects", st.session_state["ed_proj"], height=120)
         education = st.text_area("Edit Education", st.session_state["ed_edu"], height=100)
         certifications = st.text_area("Edit Certifications (Optional)", st.session_state["ed_cert"], height=80)
-        languages = st.text_area("Languages Spoken", "- English\n- Telugu")
+        languages = st.text_area("Languages Spoken", "- English\n- Local Language")
         declaration = st.text_area("Declaration Statement", "I hereby declare that all information provided is accurate to the best of my knowledge.")
         dec_date = st.text_input("Date", "")
 
