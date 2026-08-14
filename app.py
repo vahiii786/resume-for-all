@@ -4,7 +4,21 @@ from collections import Counter
 import math
 import urllib.parse
 
-# Enhanced PDF & DOCX Safe Imports
+# Ultra-Reliable PDF & DOCX Safe Imports
+fitz_available = False
+try:
+    import fitz  # PyMuPDF
+    fitz_available = True
+except ImportError:
+    fitz_available = False
+
+pdfplumber_available = False
+try:
+    import pdfplumber
+    pdfplumber_available = True
+except ImportError:
+    pdfplumber_available = False
+
 pypdf_available = False
 try:
     import pypdf
@@ -15,13 +29,6 @@ except ImportError:
         pypdf_available = True
     except ImportError:
         pypdf_available = False
-
-pdfplumber_available = False
-try:
-    import pdfplumber
-    pdfplumber_available = True
-except ImportError:
-    pdfplumber_available = False
 
 docx_available = False
 try:
@@ -49,7 +56,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🎤 AI Mock Interview"
 ])
 
-# Ultra-Robust Helper Function to Read PDF, DOCX, TXT
+# Powerful File Extractor Function
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
         return ""
@@ -59,11 +66,24 @@ def extract_text_from_file(uploaded_file):
     
     try:
         uploaded_file.seek(0)
+        file_bytes = uploaded_file.read()
         
         if file_type == "pdf":
-            # Attempt 1: pdfplumber (Most accurate)
-            if pdfplumber_available:
+            # Attempt 1: PyMuPDF (fitz) - Fastest & Most Powerful
+            if fitz_available:
                 try:
+                    doc = fitz.open(stream=file_bytes, filetype="pdf")
+                    for page in doc:
+                        extracted = page.get_text()
+                        if extracted:
+                            text += extracted + "\n"
+                except Exception:
+                    text = ""
+
+            # Attempt 2: pdfplumber fallback
+            if not text.strip() and pdfplumber_available:
+                try:
+                    uploaded_file.seek(0)
                     with pdfplumber.open(uploaded_file) as pdf:
                         for page in pdf.pages:
                             extracted = page.extract_text()
@@ -72,7 +92,7 @@ def extract_text_from_file(uploaded_file):
                 except Exception:
                     text = ""
 
-            # Attempt 2: Fallback to pypdf / PyPDF2 if Method 1 fails or empty
+            # Attempt 3: pypdf fallback
             if not text.strip() and pypdf_available:
                 try:
                     uploaded_file.seek(0)
@@ -86,6 +106,7 @@ def extract_text_from_file(uploaded_file):
 
         elif file_type in ["docx", "doc"]:
             if docx_available:
+                uploaded_file.seek(0)
                 doc = docx.Document(uploaded_file)
                 for para in doc.paragraphs:
                     if para.text:
@@ -95,7 +116,7 @@ def extract_text_from_file(uploaded_file):
             text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
             
     except Exception as e:
-        st.sidebar.error(f"Error reading {uploaded_file.name}: {e}")
+        pass
         
     return text.strip()
 
@@ -170,7 +191,7 @@ if resume_file:
     if extracted_resume != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
     else:
-        st.sidebar.warning("⚠️ Could not extract text from PDF. Try copy-pasting text in box below.")
+        st.sidebar.warning("⚠️ Could not extract text automatically. Please paste resume text in box below.")
 
 jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
 jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
@@ -182,7 +203,7 @@ if jd_file:
     if extracted_jd != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
     else:
-        st.sidebar.warning("⚠️ Could not extract text from JD file.")
+        st.sidebar.warning("⚠️ Could not extract text from JD. Please paste JD text in box below.")
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
