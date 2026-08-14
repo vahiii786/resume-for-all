@@ -499,154 +499,143 @@ def calculate_general_resume_score(text):
 with tab1:
     st.subheader(" Resume Score & Analysis")
 
-    if resume_text.strip() == "":
-        st.info(" Sidebar లో మీ Resume ని అప్‌లోడ్ లేదా పేస్ట్ చేయండి.")
+    if not resume_text.strip():
+        st.info("👈 Sidebar లో మీ Resume ని అప్‌లోడ్ లేదా పేస్ట్ చేయండి.")
     else:
-        # 1. స్క్రీన్‌ని రెండు కాలమ్స్‌గా విభజించడం (రైట్ సైడ్ ప్రివ్యూ - లెఫ్ట్ సైడ్ అనాలిసిస్)
-        col_preview, col_analysis = st.columns([1, 1.2])
+        # Split Screen Layout (రైట్ సైడ్ ప్రివ్యూ - లెఫ్ట్ సైడ్ అనాలిసిస్)
+        col_preview, col_analysis = st.columns([1.1, 1])
 
-        # ------------ RESUME DOCUMENT PREVIEW ------------
-with col_preview:
-    st.markdown("### Document Preview")
+        # ------------ 1. DOCUMENT PREVIEW (PyMuPDF Image Rendering) ------------
+        with col_preview:
+            st.markdown("### 📄 Document Preview")
 
-    if resume_file is not None and resume_file.name.lower().endswith(".pdf"):
-        try:
-            # PyMuPDF (fitz) ఉపయోగించి మొదటి పేజీని ఇమేజ్‌గా మార్చడం
-            if fitz_available:
-                resume_file.seek(0)
-                file_bytes = resume_file.read()
-                doc = fitz.open(stream=file_bytes, filetype="pdf")
+            if resume_file is not None and resume_file.name.lower().endswith(".pdf"):
+                try:
+                    if fitz_available:
+                        resume_file.seek(0)
+                        file_bytes = resume_file.read()
+                        doc = fitz.open(stream=file_bytes, filetype="pdf")
 
-                # PDF లోని అన్ని పేజీలను వరుసగా డిస్‌ప్లే చేయడం
-                for page_num in range(len(doc)):
-                    page = doc[page_num]
-                    pix = page.get_pixmap(dpi=150)  # High resolution image
-                    img_bytes = pix.tobytes("png")
-                    st.image(
-                        img_bytes,
-                        caption=f"Page {page_num + 1}",
-                        use_container_width=True,
+                        for page_num in range(len(doc)):
+                            page = doc[page_num]
+                            pix = page.get_pixmap(dpi=150)
+                            img_bytes = pix.tobytes("png")
+                            st.image(
+                                img_bytes,
+                                caption=f"Page {page_num + 1}",
+                                use_container_width=True,
+                            )
+                    else:
+                        st.text_area(
+                            "Uploaded Resume Content",
+                            value=resume_text,
+                            height=600,
+                            disabled=True,
+                        )
+                except Exception as e:
+                    st.error(f"Preview Error: {e}")
+                    st.text_area(
+                        "Uploaded Resume Content",
+                        value=resume_text,
+                        height=600,
+                        disabled=True,
                     )
             else:
-                # fitz లేకపోతే fallback టెక్స్ట్ చూపిస్తుంది
                 st.text_area(
                     "Uploaded Resume Content",
                     value=resume_text,
                     height=600,
                     disabled=True,
                 )
-        except Exception as e:
-            st.error(f"Preview లోడ్ చేయడంలో ఇబ్బంది: {e}")
-            st.text_area(
-                "Uploaded Resume Content",
-                value=resume_text,
-                height=600,
-                disabled=True,
-            )
-    else:
-        # DOCX లేదా direct text ఉన్నప్పుడు
-        st.text_area(
-            "Uploaded Resume Content",
-            value=resume_text,
-            height=600,
-            disabled=True,
-        )
-        # ------------ కుడి వైపు: SCORE & ANALYSIS ------------
+
+        # ------------ 2. SCORE & ANALYSIS ------------
         with col_analysis:
-            if st.button("Run Full Analysis ", type="primary", key="tab1_run_btn"):
-                # CASE 1: USER HAS A JOB DESCRIPTION (YES)
-                if (
-                    has_jd == "Yes (Compare with Job Description)"
-                    and job_description.strip() != ""
-                ):
-                    v1 = text_to_vector(resume_text)
-                    v2 = text_to_vector(job_description)
-                    match_percentage = round(
-                        get_cosine_similarity(v1, v2) * 100, 2
-                    )
-                    missing_skills = get_missing_keywords(
-                        resume_text, job_description
-                    )
-                    target_role = extract_job_title(job_description)
-                    encoded_role = urllib.parse.quote(target_role)
+            st.markdown("### 📊 Analysis & Insights")
 
-                    c_m1, c_m2 = st.columns(2)
-                    with c_m1:
-                        st.metric(
-                            label=" Job Match Score",
-                            value=f"{match_percentage}%",
-                        )
-                        if match_percentage >= 50:
-                            st.success(" High Match Alignment!")
-                        elif match_percentage >= 25:
-                            st.warning(" Moderate Alignment.")
-                        else:
-                            st.error(" Low Alignment.")
-                    with c_m2:
-                        st.write("**Missing Keywords:**")
-                        st.write(
-                            ", ".join([f"`{w}`" for w in missing_skills])
-                            if missing_skills
-                            else "None!"
-                        )
+            # CASE 1: USER HAS A JOB DESCRIPTION (YES)
+            if (
+                has_jd == "Yes (Compare with Job Description)"
+                and job_description.strip() != ""
+            ):
+                v1 = text_to_vector(resume_text)
+                v2 = text_to_vector(job_description)
+                match_percentage = round(get_cosine_similarity(v1, v2) * 100, 2)
+                missing_skills = get_missing_keywords(
+                    resume_text, job_description
+                )
+                target_role = extract_job_title(job_description)
+                encoded_role = urllib.parse.quote(target_role)
 
-                    st.divider()
-                    st.markdown("#### Section-Wise Match Breakdown")
-                    section_scores = calculate_section_scores(
-                        resume_text, job_description
-                    )
-                    sc1, sc2 = st.columns(2)
-                    sc1.metric("Skills Match", f"{section_scores['skills']}%")
-                    sc2.metric(
-                        "Experience Match", f"{section_scores['experience']}%"
-                    )
-                    sc3, sc4 = st.columns(2)
-                    sc3.metric(
-                        "Projects Match", f"{section_scores['projects']}%"
-                    )
-                    sc4.metric(
-                        "Education Match", f"{section_scores['education']}%"
-                    )
-
-                    st.divider()
-                    st.markdown("#### Matched Keywords Evidence")
-                    evidence_list = get_evidence_matches(
-                        resume_text, job_description
-                    )
-                    if evidence_list:
-                        for kw, line in evidence_list[:5]:
-                            st.write(f" **`{kw}`** — _\"{line}\"_")
-
-                    st.divider()
-                    st.subheader(f" Live Job Openings: {target_role}")
-                    st.link_button(
-                        "Apply on LinkedIn ",
-                        f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
-                        use_container_width=True,
-                    )
-
-                # CASE 2: USER DOES NOT HAVE A JOB DESCRIPTION (NO)
-                else:
-                    gen_score, feedback_list = calculate_general_resume_score(
-                        resume_text
-                    )
-
+                c_m1, c_m2 = st.columns(2)
+                with c_m1:
                     st.metric(
-                        label=" General Resume Quality Score",
-                        value=f"{gen_score} / 100",
+                        label="🎯 Job Match Score", value=f"{match_percentage}%"
                     )
-                    if gen_score >= 75:
-                        st.success(" Excellent Resume Structure!")
-                    elif gen_score >= 50:
-                        st.warning(" Good Resume, but can be improved.")
+                    if match_percentage >= 50:
+                        st.success("🔥 High Alignment!")
+                    elif match_percentage >= 25:
+                        st.warning("⚠️ Moderate Alignment.")
                     else:
-                        st.error(" Low Score.")
+                        st.error("❌ Low Alignment.")
+                with c_m2:
+                    st.write("**Missing Keywords:**")
+                    st.write(
+                        ", ".join([f"`{w}`" for w in missing_skills])
+                        if missing_skills
+                        else "None!"
+                    )
 
-                    st.divider()
-                    st.markdown("#### ATS Quality Feedback:")
-                    for item in feedback_list:
-                        st.write(item)
+                st.divider()
+                st.markdown("#### Section-Wise Match Breakdown")
+                section_scores = calculate_section_scores(
+                    resume_text, job_description
+                )
+                sc1, sc2 = st.columns(2)
+                sc1.metric("Skills Match", f"{section_scores['skills']}%")
+                sc2.metric(
+                    "Experience Match", f"{section_scores['experience']}%"
+                )
+                sc3, sc4 = st.columns(2)
+                sc3.metric("Projects Match", f"{section_scores['projects']}%")
+                sc4.metric("Education Match", f"{section_scores['education']}%")
 
+                st.divider()
+                st.markdown("#### Matched Keywords Evidence")
+                evidence_list = get_evidence_matches(
+                    resume_text, job_description
+                )
+                if evidence_list:
+                    for kw, line in evidence_list[:5]:
+                        st.write(f"🔹 **`{kw}`** — _\"{line}\"_")
+
+                st.divider()
+                st.subheader(f"🔗 Live Job Openings: {target_role}")
+                st.link_button(
+                    "Apply on LinkedIn 💼",
+                    f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}",
+                    use_container_width=True,
+                )
+
+            # CASE 2: GENERAL SCORE (NO JD)
+            else:
+                gen_score, feedback_list = calculate_general_resume_score(
+                    resume_text
+                )
+
+                st.metric(
+                    label="📊 General Quality Score", value=f"{gen_score} / 100"
+                )
+                if gen_score >= 75:
+                    st.success("🌟 Excellent Resume Structure!")
+                elif gen_score >= 50:
+                    st.warning("⚠️ Good Resume, but can be improved.")
+                else:
+                    st.error("❌ Low Score.")
+
+                st.divider()
+                st.markdown("#### ATS Quality Feedback:")
+                for item in feedback_list:
+                    st.write(item)
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
     st.subheader("✏️ Resume Upload & Interactive Editor")
