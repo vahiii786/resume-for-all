@@ -209,58 +209,127 @@ resume_text = extracted_resume if extracted_resume != "" else resume_text_input
 
 if resume_file:
     if extracted_resume != "":
-        st.sidebar.success(f"✅ Successfully read {len(extracted_resume.split())} words from Resume!")
+        st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
     else:
         st.sidebar.warning("⚠️ Could not extract text. Please paste text in box below.")
 
-jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
-jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
+st.sidebar.divider()
 
-extracted_jd = extract_text_from_file(jd_file)
-job_description = extracted_jd if extracted_jd != "" else jd_text_input
+# Mandatory కాకుండా Optional JD Toggle
+has_jd = st.sidebar.radio("Do you have a Job Description (JD) to match?", ["No (Check General Resume Score)", "Yes (Compare with Job Description)"])
 
-if jd_file:
-    if extracted_jd != "":
+job_description = ""
+if has_jd == "Yes (Compare with Job Description)":
+    jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
+    jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
+
+    extracted_jd = extract_text_from_file(jd_file)
+    job_description = extracted_jd if extracted_jd != "" else jd_text_input
+
+    if jd_file and extracted_jd != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
+        
+# General Resume Quality Calculator (When NO JD is provided)
+def calculate_general_resume_score(text):
+    score = 0
+    feedback = []
+    word_count = len(text.split())
+    
+    # 1. Word Count Check (Ideal: 250 - 1000 words)
+    if 250 <= word_count <= 1000:
+        score += 25
+        feedback.append("✅ **Ideal Length:** Resume length is optimal for ATS readable scans.")
+    elif word_count < 250:
+        score += 10
+        feedback.append("⚠️ **Too Short:** Resume might be lacking details. Aim for at least 300+ words.")
     else:
-        st.sidebar.warning("⚠️ Could not extract text from JD. Paste text below.")
+        score += 15
+        feedback.append("⚠️ **Too Long:** Try to condense your resume to 1-2 pages.")
+
+    # 2. Key Sections Check
+    text_lower = text.lower()
+    sections = ['education', 'skills', 'experience', 'projects']
+    found_sections = [s for s in sections if s in text_lower]
+    score += len(found_sections) * 10  # Max 40 points
+    feedback.append(f"✅ **Essential Sections Found:** Found {len(found_sections)}/4 key sections ({', '.join([s.capitalize() for s in found_sections])}).")
+
+    # 3. Action Verbs Check
+    action_words = ['developed', 'managed', 'created', 'built', 'designed', 'implemented', 'led', 'improved', 'analyzed', 'engineered']
+    found_verbs = [v for v in action_words if v in text_lower]
+    if len(found_verbs) >= 4:
+        score += 20
+        feedback.append(f"✅ **Strong Action Verbs:** Good usage of power words like `{', '.join(found_verbs[:4])}`.")
+    else:
+        score += 10
+        feedback.append("💡 **Action Verbs:** Consider adding more action words (e.g., *Built, Engineered, Developed*).")
+
+    # 4. Contact/Links Check
+    if any(k in text_lower for k in ['email', '@', 'linkedin', 'github', 'phone']):
+        score += 15
+        feedback.append("✅ **Contact Information:** Contact or portfolio details detected.")
+    else:
+        feedback.append("⚠️ **Contact Info Missing:** Ensure your email or phone number is clearly stated.")
+
+    return score, feedback
+
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
-    st.subheader("📊 Match Score & Live Job Recommendations")
+    st.subheader("📊 Resume Score & Analysis")
+    
     if st.button("Run Full Analysis 🚀", type="primary"):
-        if resume_text.strip() != "" and job_description.strip() != "":
-            v1 = text_to_vector(resume_text)
-            v2 = text_to_vector(job_description)
-            match_percentage = round(get_cosine_similarity(v1, v2) * 100, 2)
-            missing_skills = get_missing_keywords(resume_text, job_description)
-            target_role = extract_job_title(job_description)
-            encoded_role = urllib.parse.quote(target_role)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric(label="Match Score Percentage", value=f"{match_percentage}%")
-                if match_percentage >= 50:
-                    st.success("🎯 High Match Alignment!")
-                elif match_percentage >= 25:
-                    st.warning("⚠️ Moderate Alignment. Needs improvement.")
-                else:
-                    st.error("❌ Low Alignment.")
-            with col2:
-                st.write("**Missing Keywords:**")
-                st.write(", ".join([f"`{w}`" for w in missing_skills]) if missing_skills else "None! Excellent Job.")
-
-            st.divider()
-            st.subheader(f"💼 Live Job Openings: {target_role}")
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.link_button("Apply on LinkedIn 🚀", f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}", use_container_width=True)
-            with c2:
-                st.link_button("Apply on Naukri 🚀", f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs", use_container_width=True)
-            with c3:
-                st.link_button("Apply on Indeed 🚀", f"https://www.indeed.com/jobs?q={encoded_role}", use_container_width=True)
+        if resume_text.strip() == "":
+            st.error("Please upload or paste your Resume first in the Sidebar!")
         else:
-            st.error("Please upload or paste both Resume and Job Description in the Sidebar!")
+            # CASE 1: USER HAS A JOB DESCRIPTION (YES)
+            if has_jd == "Yes (Compare with Job Description)" and job_description.strip() != "":
+                v1 = text_to_vector(resume_text)
+                v2 = text_to_vector(job_description)
+                match_percentage = round(get_cosine_similarity(v1, v2) * 100, 2)
+                missing_skills = get_missing_keywords(resume_text, job_description)
+                target_role = extract_job_title(job_description)
+                encoded_role = urllib.parse.quote(target_role)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric(label="🎯 Job Match Score", value=f"{match_percentage}%")
+                    if match_percentage >= 50:
+                        st.success("🎯 High Match Alignment with Job Description!")
+                    elif match_percentage >= 25:
+                        st.warning("⚠️ Moderate Alignment. Needs improvement.")
+                    else:
+                        st.error("❌ Low Alignment. Add relevant missing keywords.")
+                with col2:
+                    st.write("**Missing Keywords from JD:**")
+                    st.write(", ".join([f"`{w}`" for w in missing_skills]) if missing_skills else "None! Excellent Job.")
+
+                st.divider()
+                st.subheader(f"💼 Live Job Openings: {target_role}")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.link_button("Apply on LinkedIn 🚀", f"https://www.linkedin.com/jobs/search/?keywords={encoded_role}", use_container_width=True)
+                with c2:
+                    st.link_button("Apply on Naukri 🚀", f"https://www.naukri.com/{encoded_role.replace('%20', '-')}-jobs", use_container_width=True)
+                with c3:
+                    st.link_button("Apply on Indeed 🚀", f"https://www.indeed.com/jobs?q={encoded_role}", use_container_width=True)
+
+            # CASE 2: USER DOES NOT HAVE A JOB DESCRIPTION (NO)
+            else:
+                gen_score, feedback_list = calculate_general_resume_score(resume_text)
+                
+                st.metric(label="📈 General Resume Quality Score", value=f"{gen_score} / 100")
+                
+                if gen_score >= 75:
+                    st.success("🌟 Excellent Resume Structure & ATS Readiness!")
+                elif gen_score >= 50:
+                    st.warning("⚠️ Good Resume, but can be improved further.")
+                else:
+                    st.error("❌ Low Score. Consider adding missing sections or content.")
+
+                st.divider()
+                st.markdown("### 🔍 ATS Quality Feedback Summary:")
+                for item in feedback_list:
+                    st.write(item)
 
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
