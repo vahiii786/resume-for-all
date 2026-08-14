@@ -3,9 +3,8 @@ import re
 from collections import Counter
 import math
 import urllib.parse
-import io
 
-# Safe Imports with Enhanced PDF Handling
+# Enhanced PDF & DOCX Safe Imports
 pypdf_available = False
 try:
     import pypdf
@@ -16,6 +15,13 @@ except ImportError:
         pypdf_available = True
     except ImportError:
         pypdf_available = False
+
+pdfplumber_available = False
+try:
+    import pdfplumber
+    pdfplumber_available = True
+except ImportError:
+    pdfplumber_available = False
 
 docx_available = False
 try:
@@ -32,7 +38,7 @@ st.set_page_config(
 
 st.title("🚀 Smart AI Resume Hub & All-in-One Career Suite")
 
-# Navigation Tabs (All 7 Features Included)
+# Navigation Tabs (All 7 Features Preserved)
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
     "✏️ Live Resume Builder",
@@ -43,7 +49,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🎤 AI Mock Interview"
 ])
 
-# Robust Helper Function to Read PDF, DOCX, TXT
+# Ultra-Robust Helper Function to Read PDF, DOCX, TXT
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
         return ""
@@ -52,18 +58,31 @@ def extract_text_from_file(uploaded_file):
     text = ""
     
     try:
-        # Reset file pointer to the beginning
         uploaded_file.seek(0)
         
         if file_type == "pdf":
-            if pypdf_available:
-                reader = pypdf.PdfReader(uploaded_file)
-                for page in reader.pages:
-                    extracted = page.extract_text()
-                    if extracted:
-                        text += extracted + "\n"
-            else:
-                st.sidebar.error("⚠️ PDF reader library not found. Add 'pypdf' to requirements.txt!")
+            # Attempt 1: pdfplumber (Most accurate)
+            if pdfplumber_available:
+                try:
+                    with pdfplumber.open(uploaded_file) as pdf:
+                        for page in pdf.pages:
+                            extracted = page.extract_text()
+                            if extracted:
+                                text += extracted + "\n"
+                except Exception:
+                    text = ""
+
+            # Attempt 2: Fallback to pypdf / PyPDF2 if Method 1 fails or empty
+            if not text.strip() and pypdf_available:
+                try:
+                    uploaded_file.seek(0)
+                    reader = pypdf.PdfReader(uploaded_file)
+                    for page in reader.pages:
+                        extracted = page.extract_text()
+                        if extracted:
+                            text += extracted + "\n"
+                except Exception:
+                    pass
 
         elif file_type in ["docx", "doc"]:
             if docx_available:
@@ -71,14 +90,12 @@ def extract_text_from_file(uploaded_file):
                 for para in doc.paragraphs:
                     if para.text:
                         text += para.text + "\n"
-            else:
-                st.sidebar.error("⚠️ DOCX reader library not found. Add 'python-docx' to requirements.txt!")
 
         elif file_type in ["txt", "md"]:
             text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
             
     except Exception as e:
-        st.sidebar.error(f"Error reading file '{uploaded_file.name}': {e}")
+        st.sidebar.error(f"Error reading {uploaded_file.name}: {e}")
         
     return text.strip()
 
@@ -107,7 +124,6 @@ def extract_job_title(jd_text):
             return re.sub(r'[^a-zA-Z0-9\s]', '', line).strip()
     return "Software Developer"
 
-# Helper to format URL for redirection
 def format_url(url):
     url = url.strip()
     if not url:
@@ -116,7 +132,6 @@ def format_url(url):
         return "https://" + url
     return url
 
-# Helper to render text with clean Bullet Points for Sub-points
 def format_bullet_points(text):
     if not text.strip():
         return ""
@@ -151,8 +166,11 @@ resume_text_input = st.sidebar.text_area("OR Paste Resume Text", height=150)
 extracted_resume = extract_text_from_file(resume_file)
 resume_text = extracted_resume if extracted_resume != "" else resume_text_input
 
-if resume_file and extracted_resume != "":
-    st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
+if resume_file:
+    if extracted_resume != "":
+        st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
+    else:
+        st.sidebar.warning("⚠️ Could not extract text from PDF. Try copy-pasting text in box below.")
 
 jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
 jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
@@ -160,8 +178,11 @@ jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
 extracted_jd = extract_text_from_file(jd_file)
 job_description = extracted_jd if extracted_jd != "" else jd_text_input
 
-if jd_file and extracted_jd != "":
-    st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
+if jd_file:
+    if extracted_jd != "":
+        st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
+    else:
+        st.sidebar.warning("⚠️ Could not extract text from JD file.")
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
@@ -236,15 +257,13 @@ with tab2:
     with b_col2:
         st.markdown("### 👁️ Live Preview")
         
-        # Theme Styles Logic
         if theme_choice == "Modern Blue":
             primary_color, title_color, header_bg = "#1E3A8A", "#4B5563", "transparent"
         elif theme_choice == "Executive Gold/Black":
             primary_color, title_color, header_bg = "#B45309", "#1F2937", "#FFFBEB"
-        else: # Minimal Dark Header
+        else:
             primary_color, title_color, header_bg = "#0F172A", "#64748B", "#F8FAFC"
 
-        # Format Profile URLs for Redirection
         linkedin_url = format_url(linkedin)
         github_url = format_url(github)
 
@@ -256,7 +275,6 @@ with tab2:
         
         contact_html = " &nbsp;|&nbsp; ".join(contact_items)
 
-        # Dynamic Sections with Sub-point Formatting
         obj_s = f"<h3 style='color:{primary_color};'>Career Objective</h3>{format_bullet_points(objective)}" if objective.strip() else ""
         edu_s = f"<h3 style='color:{primary_color};'>Education</h3>{format_bullet_points(education)}" if education.strip() else ""
         skl_s = f"<h3 style='color:{primary_color};'>Technical Skills</h3>{format_bullet_points(skills)}" if skills.strip() else ""
