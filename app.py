@@ -653,7 +653,7 @@ with tab1:
     st.subheader(" Resume Score & Analysis")
 
     if not resume_text.strip():
-        st.info("👈 Sidebar లో మీ Resume ని అప్‌లోడ్ లేదా పేస్ట్ చేయండి.")
+        st.info("👈 past or uplode your resume on slide bar.")
     else:
         # Split Screen Layout (రైట్ సైడ్ ప్రివ్యూ - లెఫ్ట్ సైడ్ అనాలిసిస్)
         col_preview, col_analysis = st.columns([1.1, 1])
