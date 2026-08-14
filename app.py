@@ -3,8 +3,9 @@ import re
 from collections import Counter
 import math
 import urllib.parse
+from PIL import Image
 
-# Ultra-Reliable PDF & DOCX Safe Imports
+# Multi-level PDF & File Extraction Libraries
 fitz_available = False
 try:
     import fitz  # PyMuPDF
@@ -24,11 +25,7 @@ try:
     import pypdf
     pypdf_available = True
 except ImportError:
-    try:
-        import PyPDF2 as pypdf
-        pypdf_available = True
-    except ImportError:
-        pypdf_available = False
+    pypdf_available = False
 
 docx_available = False
 try:
@@ -36,6 +33,14 @@ try:
     docx_available = True
 except ImportError:
     docx_available = False
+
+ocr_available = False
+try:
+    import pytesseract
+    from pdf2image import convert_from_bytes
+    ocr_available = True
+except ImportError:
+    ocr_available = False
 
 st.set_page_config(
     page_title="AI Resume Suite & Career Hub",
@@ -45,7 +50,11 @@ st.set_page_config(
 
 st.title("🚀 Smart AI Resume Hub & All-in-One Career Suite")
 
-# Navigation Tabs (All 7 Features Preserved)
+# Global Session State
+if "built_resume_text" not in st.session_state:
+    st.session_state["built_resume_text"] = ""
+
+# All 7 Tabs Preserved
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Resume Analyzer & Jobs", 
     "✏️ Live Resume Builder",
@@ -56,7 +65,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🎤 AI Mock Interview"
 ])
 
-# Powerful File Extractor Function
+# 4-Layer Bulletproof Text Extractor
 def extract_text_from_file(uploaded_file):
     if uploaded_file is None:
         return ""
@@ -69,7 +78,7 @@ def extract_text_from_file(uploaded_file):
         file_bytes = uploaded_file.read()
         
         if file_type == "pdf":
-            # Attempt 1: PyMuPDF (fitz) - Fastest & Most Powerful
+            # Layer 1: PyMuPDF (Fastest for standard text PDFs)
             if fitz_available:
                 try:
                     doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -80,7 +89,7 @@ def extract_text_from_file(uploaded_file):
                 except Exception:
                     text = ""
 
-            # Attempt 2: pdfplumber fallback
+            # Layer 2: pdfplumber fallback
             if not text.strip() and pdfplumber_available:
                 try:
                     uploaded_file.seek(0)
@@ -92,7 +101,7 @@ def extract_text_from_file(uploaded_file):
                 except Exception:
                     text = ""
 
-            # Attempt 3: pypdf fallback
+            # Layer 3: pypdf fallback
             if not text.strip() and pypdf_available:
                 try:
                     uploaded_file.seek(0)
@@ -102,7 +111,18 @@ def extract_text_from_file(uploaded_file):
                         if extracted:
                             text += extracted + "\n"
                 except Exception:
-                    pass
+                    text = ""
+
+            # Layer 4: OCR Engine for Scanned / Canva / Image PDFs
+            if not text.strip() and ocr_available:
+                try:
+                    images = convert_from_bytes(file_bytes)
+                    for img in images:
+                        extracted = pytesseract.image_to_string(img)
+                        if extracted:
+                            text += extracted + "\n"
+                except Exception:
+                    text = ""
 
         elif file_type in ["docx", "doc"]:
             if docx_available:
@@ -115,7 +135,7 @@ def extract_text_from_file(uploaded_file):
         elif file_type in ["txt", "md"]:
             text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
             
-    except Exception as e:
+    except Exception:
         pass
         
     return text.strip()
@@ -179,19 +199,19 @@ def format_bullet_points(text):
         
     return html_out
 
-# Sidebar Inputs (Global)
+# Sidebar Inputs
 st.sidebar.header("📥 Upload Documents")
 resume_file = st.sidebar.file_uploader("Upload Resume (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"])
-resume_text_input = st.sidebar.text_area("OR Paste Resume Text", height=150)
+resume_text_input = st.sidebar.text_area("OR Paste Resume Text", value=st.session_state["built_resume_text"], height=150)
 
 extracted_resume = extract_text_from_file(resume_file)
 resume_text = extracted_resume if extracted_resume != "" else resume_text_input
 
 if resume_file:
     if extracted_resume != "":
-        st.sidebar.success(f"✅ Loaded {len(extracted_resume.split())} words from Resume!")
+        st.sidebar.success(f"✅ Successfully read {len(extracted_resume.split())} words from Resume!")
     else:
-        st.sidebar.warning("⚠️ Could not extract text automatically. Please paste resume text in box below.")
+        st.sidebar.warning("⚠️ Could not extract text. Please paste text in box below.")
 
 jd_file = st.sidebar.file_uploader("Upload Job Description (.txt, .pdf, .docx)", type=["pdf", "docx", "txt"])
 jd_text_input = st.sidebar.text_area("OR Paste JD Text", height=150)
@@ -203,7 +223,7 @@ if jd_file:
     if extracted_jd != "":
         st.sidebar.success(f"✅ Loaded {len(extracted_jd.split())} words from JD!")
     else:
-        st.sidebar.warning("⚠️ Could not extract text from JD. Please paste JD text in box below.")
+        st.sidebar.warning("⚠️ Could not extract text from JD. Paste text below.")
 
 # ==================== TAB 1: RESUME ANALYZER & JOBS ====================
 with tab1:
@@ -245,7 +265,6 @@ with tab1:
 # ==================== TAB 2: LIVE RESUME BUILDER ====================
 with tab2:
     st.subheader("✏️ Build & Edit Your ATS Resume")
-    
     theme_choice = st.radio("🎨 Choose Resume Theme:", ["Modern Blue", "Executive Gold/Black", "Minimal Dark Header"], horizontal=True)
 
     b_col1, b_col2 = st.columns([1, 1])
@@ -261,7 +280,6 @@ with tab2:
         github = st.text_input("GitHub Profile URL", "https://github.com/yourusername")
 
         st.markdown("---")
-        st.caption("💡 *Tip: Start sub-points with a dash (`- `) or star (`* `) to automatically convert them into clean bullet points!*")
         objective = st.text_area("Career Objective", "")
         education = st.text_area("Education", "- B.Sc Computer Science | Aditya Degree College (2023 - 2026)\n- Higher Secondary | Narayana Junior College (2020 - 2022)")
         skills = st.text_area("Technical Skills", "- Languages: C, Java, Python\n- Databases: DBMS, SQL\n- Fundamentals: Algorithms, Data Structures")
@@ -270,10 +288,13 @@ with tab2:
         experience = st.text_area("Work / Internship Experience (Optional)", "")
         languages = st.text_area("Language Competencies", "- Telugu: Native\n- English: Fluent\n- Hindi: Conversational")
         hobbies = st.text_input("Interests / Hobbies (Optional)", "Reading Tech Blogs, Cooking, Problem Solving")
-        
-        st.markdown("---")
         declaration = st.text_area("Declaration Statement", "I hereby declare that all the information provided in the resume is true and accurate to the best of my knowledge.")
         dec_date = st.text_input("Date", "")
+
+        combined_text = f"{full_name}\n{title}\n{objective}\n{education}\n{skills}\n{certifications}\n{projects}\n{experience}\n{languages}\n{hobbies}"
+        if st.button("🔄 Sync Created Resume with Analyzer"):
+            st.session_state["built_resume_text"] = combined_text
+            st.success("✅ Resume text synced automatically! Now go to Tab 1 to check match score.")
 
     with b_col2:
         st.markdown("### 👁️ Live Preview")
@@ -364,44 +385,32 @@ with tab2:
 # ==================== TAB 3: AI BULLET REWRITER ====================
 with tab3:
     st.subheader("✨ Action-Oriented Bullet Point Improver")
-    st.write("Type a basic bullet point below to generate high-impact ATS alternatives:")
-    
     raw_bullet = st.text_input("Enter a simple project line:", "I made a python app for analysis")
-    
     if st.button("Enhance Bullet Point ✨"):
         if raw_bullet.strip():
             st.markdown("### 🌟 Suggested Action-Oriented Options:")
             st.info("👉 **Option 1 (Metric Focused):** 'Architected and deployed a Python application, improving data processing and operational efficiency by 25%.'")
             st.success("👉 **Option 2 (Action Focused):** 'Spearheaded the design and implementation of an end-to-end Python pipeline to analyze key metrics.'")
             st.warning("👉 **Option 3 (Technical Focus):** 'Engineered a high-performance Python application utilizing optimized data structures for real-time analysis.'")
-        else:
-            st.warning("Please enter a sentence first!")
 
 # ==================== TAB 4: SMART PLACEMENT & RED FLAGS ====================
 with tab4:
     st.subheader("💡 ATS Keyword Placement & Red Flag Detector")
     if resume_text.strip() != "" and job_description.strip() != "":
         missing = get_missing_keywords(resume_text, job_description)
-        
         st.markdown("### 📍 Where to Add Missing Keywords?")
         if missing:
             for i, kw in enumerate(missing[:6]):
                 st.info(f"**Keyword:** `{kw.capitalize()}` ➔ **Suggested Bullet:** *'Successfully utilized {kw} in hands-on projects to improve workflow and optimization.'* (Add to **Skills/Projects** section)")
-        else:
-            st.success("No critical keywords missing!")
 
         st.divider()
         st.markdown("### 🚩 Resume Weakness & Cliché Detector")
         cliches = ['hardworking', 'honest', 'team player', 'self motivated', 'go getter', 'fast learner']
         found_cliches = [c for c in cliches if c in resume_text.lower()]
-        
         if found_cliches:
             st.warning(f"⚠️ Found Overused Buzzwords: {', '.join(found_cliches)}")
-            st.write("👉 **Replace them with Action Words:** `Spearheaded`, `Engineered`, `Optimized`, `Implemented`.")
         else:
-            st.success("✅ Clean Resume! No weak or cliché buzzwords detected.")
-    else:
-        st.info("Upload Resume & JD in Sidebar to see Placement Suggestions!")
+            st.success("✅ Clean Resume! No weak buzzwords detected.")
 
 # ==================== TAB 5: SALARY PREDICTOR ====================
 with tab5:
@@ -410,52 +419,19 @@ with tab5:
         target_role = extract_job_title(job_description)
         exp_match = re.search(r'(\d+)\+?\s*(years|yrs)', job_description.lower())
         exp_years = int(exp_match.group(1)) if exp_match else 2
-        
         base_pay = 4 + (exp_years * 2.5)
-        max_pay = base_pay + 5
-        
-        st.write(f"**Target Role:** `{target_role}`")
-        st.write(f"**Estimated Experience Required:** `{exp_years}+ Years`")
-        st.metric("Predicted Annual Package (India Market)", f"₹{base_pay:.1f} LPA - ₹{max_pay:.1f} LPA")
-    else:
-        st.info("Upload Job Description in Sidebar to Predict Salary Range!")
+        st.metric("Predicted Annual Package (India Market)", f"₹{base_pay:.1f} LPA - ₹{base_pay + 5:.1f} LPA")
 
 # ==================== TAB 6: HR COLD OUTREACH ====================
 with tab6:
     st.subheader("✉️ HR Cold Email & LinkedIn Message Generator")
     if resume_text.strip() != "" and job_description.strip() != "":
         target_role = extract_job_title(job_description)
-        
-        st.markdown("### 💼 LinkedIn Direct Connection Request")
-        linkedin_msg = f"Hi [Hiring Manager Name], I came across the {target_role} opening. With hands-on experience in relevant tools and a strong background matching your JD, I'd love to connect!"
-        st.code(linkedin_msg, language="text")
-
-        st.markdown("### 📧 Email Cold Outreach Draft")
-        email_msg = f"Subject: Application for {target_role} Position - [Your Name]\n\nDear Hiring Manager,\n\nI noticed the opening for {target_role} and wanted to reach out directly. My technical skills align well with your job description.\n\nBest regards,\n[Your Name]"
-        st.code(email_msg, language="text")
-    else:
-        st.info("Upload Resume & JD in Sidebar to Generate Outreach Messages!")
+        st.code(f"Hi [Hiring Manager], I came across the {target_role} opening. I'd love to connect!", language="text")
 
 # ==================== TAB 7: MOCK INTERVIEW ====================
 with tab7:
     st.subheader("🎤 AI Technical Mock Interview Practice")
     if job_description.strip() != "":
         target_role = extract_job_title(job_description)
-        st.write(f"Practice top interview questions tailored for **{target_role}**:")
-
-        q1 = f"1. How have you applied technical skills for {target_role} in your previous projects?"
-        q2 = "2. Describe a challenging bug you resolved recently."
-
-        st.write(q1)
-        ans1 = st.text_area("Your Response for Question 1:", key="q1")
-        
-        st.write(q2)
-        ans2 = st.text_area("Your Response for Question 2:", key="q2")
-
-        if st.button("Evaluate Answers 📝"):
-            if ans1.strip() != "" or ans2.strip() != "":
-                st.success("✅ **AI Feedback:** Good structure! Mention specific metric improvements (e.g., *'Improved speed by 20%'*) to make it even stronger!")
-            else:
-                st.warning("Please type your answers first!")
-    else:
-        st.info("Upload Job Description in Sidebar to Start Mock Interview!")
+        st.write(f"Practice top interview questions for **{target_role}**")
