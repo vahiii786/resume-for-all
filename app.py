@@ -437,9 +437,6 @@ if resume_file:
 
 st.sidebar.divider()
 
-# Optional JD Toggle
-has_jd = st.sidebar.radio("Do you have a Job Description (JD) to match?", ["No (Check General Resume Score)", "Yes (Compare with Job Description)"])
-
 # ------------ SIDEBAR: JOB DESCRIPTION SECTION ------------
 has_jd = st.sidebar.radio(
     "Do you have a Job Description (JD) to match?",
