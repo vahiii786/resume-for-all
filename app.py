@@ -334,19 +334,83 @@ with tab1:
 # ==================== TAB 2: LIVE RESUME EDITOR & BUILDER ====================
 with tab2:
     st.subheader("✏️ Resume Upload & Interactive Editor")
-    st.write("అప్లోడ్ చేసిన రెజ్యూమ్‌లోని వివరాలను లేదా కొత్త వివరాలను కింద ఉన్న బాక్సులలో నేరుగా ఎడిట్ లేదా మార్పులు చేసుకోవచ్చు.")
+    st.write("మీ రెజ్యూమ్‌ని అప్‌లోడ్ చేసి బటన్ నొక్కగానే, వివరాలన్నీ కింద ఉన్న బాక్సులలోకి ఆటోమేటిక్‌గా లోడ్ అవుతాయి. అక్కడ మీరు సులభంగా మోడిఫై చేసుకోవచ్చు.")
     
-    # 1. File Upload to Edit
+    # Session State Initialization for Smart Auto-Fill
+    if "ed_name" not in st.session_state: st.session_state["ed_name"] = ""
+    if "ed_title" not in st.session_state: st.session_state["ed_title"] = ""
+    if "ed_email" not in st.session_state: st.session_state["ed_email"] = ""
+    if "ed_phone" not in st.session_state: st.session_state["ed_phone"] = ""
+    if "ed_loc" not in st.session_state: st.session_state["ed_loc"] = ""
+    if "ed_obj" not in st.session_state: st.session_state["ed_obj"] = ""
+    if "ed_skills" not in st.session_state: st.session_state["ed_skills"] = ""
+    if "ed_exp" not in st.session_state: st.session_state["ed_exp"] = ""
+    if "ed_proj" not in st.session_state: st.session_state["ed_proj"] = ""
+    if "ed_edu" not in st.session_state: st.session_state["ed_edu"] = ""
+    if "ed_cert" not in st.session_state: st.session_state["ed_cert"] = ""
+
+    # 1. File Upload Section
     uploaded_edit_file = st.file_uploader("📂 Upload Resume to Edit (.pdf, .docx, .txt)", type=["pdf", "docx", "txt"], key="editor_file")
     
     if uploaded_edit_file is not None:
-        if st.button("📥 Load Uploaded Text into Editor"):
+        if st.button("📥 Parse & Load Resume into Editor Boxes", type="primary"):
             extracted_raw = extract_text_from_file(uploaded_edit_file)
             if extracted_raw:
-                st.session_state["ed_exp"] = extracted_raw
-                st.success("✅ Text loaded successfully! You can now edit/modify all text below.")
+                lines = [line.strip() for line in extracted_raw.split('\n') if line.strip()]
+                
+                # Simple Smart Parsing Logic
+                # Name (Usually first non-empty line)
+                if lines:
+                    st.session_state["ed_name"] = lines[0]
+                
+                # Email Extraction Regex/Check
+                import re
+                emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', extracted_raw)
+                if emails: st.session_state["ed_email"] = emails[0]
+                
+                # Phone Number Extraction Regex/Check
+                phones = re.findall(r'[\+\(]?[0-9][0-9\-\s\(\)]{8,}[0-9]', extracted_raw)
+                if phones: st.session_state["ed_phone"] = phones[0]
+
+                # Section Extraction Logic based on Headings
+                lower_text = extracted_raw.lower()
+                
+                # Helper to split text by headers
+                def get_section_text(text, keywords):
+                    text_lines = text.split('\n')
+                    capturing = False
+                    result = []
+                    for line in text_lines:
+                        l_str = line.strip().lower()
+                        # If line matches section heading
+                        if any(k in l_str for k in keywords) and len(l_str) < 35:
+                            capturing = True
+                            continue
+                        # If hit another potential heading stop
+                        elif capturing and any(h in l_str for h in ['education', 'skills', 'experience', 'projects', 'certifications', 'summary', 'objective']) and len(l_str) < 35:
+                            break
+                        if capturing:
+                            result.append(line)
+                    return '\n'.join(result).strip()
+
+                parsed_obj = get_section_text(extracted_raw, ['objective', 'summary', 'profile'])
+                parsed_skills = get_section_text(extracted_raw, ['skills', 'technical skills', 'technologies'])
+                parsed_exp = get_section_text(extracted_raw, ['experience', 'work experience', 'employment', 'internship'])
+                parsed_proj = get_section_text(extracted_raw, ['projects', 'academic projects'])
+                parsed_edu = get_section_text(extracted_raw, ['education', 'qualification', 'academic background'])
+                parsed_cert = get_section_text(extracted_raw, ['certifications', 'certificates'])
+
+                if parsed_obj: st.session_state["ed_obj"] = parsed_obj
+                if parsed_skills: st.session_state["ed_skills"] = parsed_skills
+                if parsed_exp: st.session_state["ed_exp"] = parsed_exp
+                else: st.session_state["ed_exp"] = extracted_raw  # Fallback to full raw text if sections fail
+                if parsed_proj: st.session_state["ed_proj"] = parsed_proj
+                if parsed_edu: st.session_state["ed_edu"] = parsed_edu
+                if parsed_cert: st.session_state["ed_cert"] = parsed_cert
+
+                st.success("✅ Resume details loaded & filled into editor boxes! You can edit them below.")
             else:
-                st.error("Could not read text from this file. Try uploading a text-based PDF/DOCX.")
+                st.error("Could not extract text from this file. Please make sure it's a readable PDF or DOCX file.")
 
     st.divider()
 
@@ -357,32 +421,28 @@ with tab2:
     with b_col1:
         st.markdown("### 📝 Edit Resume Sections")
         
-        # Using placeholder so text auto-clears on user click/type
-        full_name = st.text_input("Full Name", value="", placeholder="e.g., John Doe")
-        title = st.text_input("Professional Title", value="", placeholder="e.g., Software Engineer / Data Analyst")
-        email = st.text_input("Email", value="", placeholder="e.g., johndoe@example.com")
-        phone = st.text_input("Phone Number", value="", placeholder="e.g., +91 9876543210")
-        location = st.text_input("Location", value="", placeholder="e.g., Hyderabad, India")
-        linkedin = st.text_input("LinkedIn Profile URL", value="", placeholder="e.g., https://www.linkedin.com/in/yourprofile")
-        github = st.text_input("GitHub Profile URL", value="", placeholder="e.g., https://github.com/yourusername")
+        # Text Inputs with Auto-Filled Values from Uploaded File
+        full_name = st.text_input("Full Name", value=st.session_state["ed_name"], placeholder="e.g., John Doe")
+        title = st.text_input("Professional Title", value=st.session_state["ed_title"], placeholder="e.g., Software Engineer")
+        email = st.text_input("Email", value=st.session_state["ed_email"], placeholder="e.g., johndoe@example.com")
+        phone = st.text_input("Phone Number", value=st.session_state["ed_phone"], placeholder="e.g., +91 9876543210")
+        location = st.text_input("Location", value=st.session_state["ed_loc"], placeholder="e.g., Hyderabad, India")
+        linkedin = st.text_input("LinkedIn Profile URL", value="", placeholder="https://www.linkedin.com/in/yourprofile")
+        github = st.text_input("GitHub Profile URL", value="", placeholder="https://github.com/yourusername")
 
         st.markdown("---")
-        objective = st.text_area("Edit Objective / Summary", value="", placeholder="e.g., Motivated professional seeking to leverage skills in software development...", height=90)
-        skills = st.text_area("Edit Skills (Use - for bullet points)", value="", placeholder="- Technical Skills: Python, SQL\n- Frameworks: Streamlit, React\n- Tools: Git, VS Code", height=110)
-        
-        # Experience uses session_state if loaded from file, else uses placeholder
-        exp_val = st.session_state.get("ed_exp", "")
-        experience = st.text_area("Edit Work Experience / Raw Uploaded Content", value=exp_val, placeholder="- Job Title | Company Name (Year - Present)\n  - Main achievement or daily responsibility using action verbs.", height=150)
-        
-        projects = st.text_area("Edit Projects", value="", placeholder="- Project Title | Technologies Used\n  - Brief description of features and functionality.", height=120)
-        education = st.text_area("Edit Education", value="", placeholder="- Degree Name | College/University Name (Year)\n- High School | School Name (Year)", height=100)
-        certifications = st.text_area("Edit Certifications (Optional)", value="", placeholder="- Certification Name | Issuing Organization (Year)", height=80)
-        languages = st.text_area("Languages Spoken", value="", placeholder="- English\n- Telugu", height=80)
-        declaration = st.text_area("Declaration Statement", value="I hereby declare that all information provided is accurate to the best of my knowledge.", height=80)
-        dec_date = st.text_input("Date", value="", placeholder="e.g., DD/MM/YYYY")
+        objective = st.text_area("Edit Objective / Summary", value=st.session_state["ed_obj"], placeholder="Career objective or summary...", height=90)
+        skills = st.text_area("Edit Skills", value=st.session_state["ed_skills"], placeholder="- Python, SQL, Streamlit...", height=110)
+        experience = st.text_area("Edit Work / Internship Experience", value=st.session_state["ed_exp"], placeholder="Work experience details...", height=150)
+        projects = st.text_area("Edit Projects", value=st.session_state["ed_proj"], placeholder="Project details...", height=120)
+        education = st.text_area("Edit Education", value=st.session_state["ed_edu"], placeholder="Degree | College Name...", height=100)
+        certifications = st.text_area("Edit Certifications (Optional)", value=st.session_state["ed_cert"], placeholder="Certifications...", height=80)
+        languages = st.text_area("Languages Spoken", value="- English\n- Telugu", height=70)
+        declaration = st.text_area("Declaration Statement", value="I hereby declare that all information provided is accurate to the best of my knowledge.", height=70)
+        dec_date = st.text_input("Date", value="", placeholder="DD/MM/YYYY")
 
-        # Fallbacks for live preview if input is empty
-        p_name = full_name if full_name.strip() else "John Doe"
+        # Fallbacks for live preview display
+        p_name = full_name if full_name.strip() else "Your Full Name"
         p_title = title if title.strip() else "Professional Title"
         p_email = email if email.strip() else "email@example.com"
         p_phone = phone if phone.strip() else "+91 9876543210"
