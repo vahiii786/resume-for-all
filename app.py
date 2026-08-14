@@ -580,14 +580,114 @@ with tab5:
 
 # ==================== TAB 6: HR COLD OUTREACH ====================
 with tab6:
-    st.subheader("✉️ HR Cold Email & LinkedIn Message Generator")
-    if resume_text.strip() != "" and job_description.strip() != "":
-        target_role = extract_job_title(job_description)
-        st.code(f"Hi [Hiring Manager], I came across the {target_role} opening. I'd love to connect!", language="text")
+    st.subheader("✉️ HR Cold Outreach & Referral Generator")
+    st.write("మీ రెజ్యూమ్ వివరాల ఆధారంగా HR లేదా రిక్రూటర్ల కోసం ప్రొఫెషనల్ ఈమెయిళ్ళు మరియు లింక్డ్ఇన్ మెసేజ్లు ఇక్కడ జనరేట్ అవుతాయి.")
 
-# ==================== TAB 7: MOCK INTERVIEW ====================
+    # Get candidate details from active session or input
+    candidate_name = p_name if 'p_name' in locals() and p_name != "Your Full Name" else "Candidate"
+    candidate_skills = skills if 'skills' in locals() and skills.strip() else "Software Development, Problem Solving"
+    
+    st.markdown("### 🎯 Outreach Options")
+    target_company = st.text_input("Enter Target Company Name", placeholder="e.g., TCS, Google, Infosys")
+    job_role = st.text_input("Enter Job Role You're Applying For", placeholder="e.g., Software Engineer, Data Analyst")
+
+    if st.button("🚀 Generate Outreach Messages", type="primary"):
+        if not target_company or not job_role:
+            st.warning("Please enter both Target Company Name and Job Role above!")
+        else:
+            comp_name = target_company.strip()
+            role_name = job_role.strip()
+
+            st.divider()
+            
+            # 1. Cold Email Template
+            st.markdown("### 📧 1. Personalized HR Cold Email")
+            email_subject = f"Application for {role_name} Position - {candidate_name}"
+            email_body = f"""Dear Hiring Team at {comp_name},
+
+I hope this email finds you well.
+
+I am reaching out to express my strong interest in the {role_name} position at {comp_name}. With my background in {candidate_skills[:80]}..., I am confident in my ability to add immediate value to your engineering team.
+
+Key highlights from my experience:
+- Hands-on expertise in key industry domains and modern tech stack.
+- Proven track record of delivering clean code and working on end-to-end projects.
+
+I have attached my resume for your review. I would welcome the opportunity to discuss how my skill set aligns with the goals of {comp_name}.
+
+Thank you for your time and consideration.
+
+Best regards,
+{candidate_name}
+"""
+            st.code(f"Subject: {email_subject}\n\n{email_body}", language="text")
+
+            # 2. LinkedIn Connection Note
+            st.markdown("### 💼 2. LinkedIn Recruiter Message (Under 300 Chars)")
+            linkedin_msg = f"Hi, I noticed active engineering roles at {comp_name}. As a {role_name} skilled in {candidate_skills[:40]}..., I’d love to connect and learn more about opportunities on your team. Thanks! - {candidate_name}"
+            st.code(linkedin_msg, language="text")
+
+            # 3. Elevator Pitch (30 Sec Intro)
+            st.markdown("### 🎙️ 3. Elevator Pitch (For HR Calls)")
+            pitch = f"Hi, I'm {candidate_name}. I specialize in {candidate_skills[:60]}... I recently built projects focusing on core domain solutions, and I am actively looking for a {role_name} role at {comp_name} where I can deliver impactful results."
+            st.info(f"**Your Pitch:** {pitch}")
+
+
+# ==================== TAB 7: AI MOCK INTERVIEW ====================
 with tab7:
-    st.subheader("🎤 AI Technical Mock Interview Practice")
-    if job_description.strip() != "":
-        target_role = extract_job_title(job_description)
-        st.write(f"Practice top interview questions for **{target_role}**")
+    st.subheader("🎤 AI Mock Interview Assistant")
+    st.write("మీ రెజ్యూమ్ ప్రాజెక్టులు మరియు స్కిల్స్ ఆధారంగా అడిగే అవకాశం ఉన్న మోస్ట్ ఇంపార్టెంట్ ఇంటర్వ్యూ ప్రశ్నలు ఇక్కడ ఉన్నాయి.")
+
+    # Determine Active Resume Text
+    active_resume_text = resume_text if 'resume_text' in locals() and resume_text.strip() else edited_full_text if 'edited_full_text' in locals() else ""
+
+    if st.button("🎯 Generate Interview Questions from My Resume", type="primary"):
+        if not active_resume_text.strip():
+            st.error("Please upload or edit a resume first to generate questions!")
+        else:
+            st.success("✅ Custom Interview Questions Generated based on your Resume details!")
+            
+            st.divider()
+            
+            st.markdown("### 💬 1. HR & Behavioral Questions")
+            st.markdown("""
+            * **Q1: Tell me about yourself and your background based on your resume.**
+              > *Tip:* Focus on your skills, 1-2 major projects, and why you are suitable for this role.
+            * **Q2: Why do you want to join our company?**
+              > *Tip:* Mention company achievements, mission, and how your career goals align with them.
+            * **Q3: Describe a challenge you faced during a project and how you solved it.**
+              > *Tip:* Use the **STAR Method** (Situation, Task, Action, Result).
+            """)
+
+            st.markdown("---")
+            
+            st.markdown("### 🛠️ 2. Domain & Resume Specific Technical Questions")
+            
+            # Simple keyword matching to render relevant tech questions
+            res_lower = active_resume_text.lower()
+            
+            q_count = 1
+            if "python" in res_lower:
+                st.markdown(f"**Q{q_count}: What are lists and tuples in Python? How do you manage memory management in Python?**")
+                q_count += 1
+            if "sql" in res_lower or "database" in res_lower:
+                st.markdown(f"**Q{q_count}: What is the difference between WHERE and HAVING clause in SQL? Explain Joins.**")
+                q_count += 1
+            if "project" in res_lower:
+                st.markdown(f"**Q{q_count}: Explain the architecture and technical challenges of your primary project mentioned in the resume.**")
+                q_count += 1
+            if "javascript" in res_lower or "react" in res_lower or "web" in res_lower:
+                st.markdown(f"**Q{q_count}: Explain state vs props in React or asynchronous programming in JS.**")
+                q_count += 1
+            
+            # Fallback general technical question
+            st.markdown(f"**Q{q_count}: How do you test and debug your code before submitting a project?**")
+
+            st.divider()
+            st.markdown("### ✍️ Practice Your Answer")
+            user_ans = st.text_area("Type your answer here to practice:", placeholder="Write your response here...")
+            if st.button("Submit Answer for Review"):
+                if len(user_ans.split()) > 20:
+                    st.success("👍 Good response! You explained with sufficient details. Make sure to keep your tone clear and confident during the live call.")
+                else:
+                    st.warning("⚠️ Your response seems a bit brief. Try adding specific examples or technical details using the STAR method.")
