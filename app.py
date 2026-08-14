@@ -505,26 +505,52 @@ with tab1:
         # 1. స్క్రీన్‌ని రెండు కాలమ్స్‌గా విభజించడం (రైట్ సైడ్ ప్రివ్యూ - లెఫ్ట్ సైడ్ అనాలిసిస్)
         col_preview, col_analysis = st.columns([1, 1.2])
 
-        # ------------ ఎడమ వైపు (లేదా ఒక కాలమ్): RESUME DOCUMENT PREVIEW ------------
-        with col_preview:
-            st.markdown("### Document Preview")
+        # ------------ RESUME DOCUMENT PREVIEW ------------
+with col_preview:
+    st.markdown("### Document Preview")
 
-            # యూజర్ PDF అప్‌లోడ్ చేసినట్లయితే PDF Viewer ని చూపిస్తుంది
-            if resume_file is not None and resume_file.name.endswith(".pdf"):
+    if resume_file is not None and resume_file.name.lower().endswith(".pdf"):
+        try:
+            # PyMuPDF (fitz) ఉపయోగించి మొదటి పేజీని ఇమేజ్‌గా మార్చడం
+            if fitz_available:
                 resume_file.seek(0)
-                base64_pdf = base64.b64encode(resume_file.read()).decode("utf-8")
-                # PDF Viewer Embedding Code
-                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-                st.markdown(pdf_display, unsafe_allow_html=True)
+                file_bytes = resume_file.read()
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+
+                # PDF లోని అన్ని పేజీలను వరుసగా డిస్‌ప్లే చేయడం
+                for page_num in range(len(doc)):
+                    page = doc[page_num]
+                    pix = page.get_pixmap(dpi=150)  # High resolution image
+                    img_bytes = pix.tobytes("png")
+                    st.image(
+                        img_bytes,
+                        caption=f"Page {page_num + 1}",
+                        use_container_width=True,
+                    )
             else:
-                # PDF కాకుండా టెక్స్ట్/DOCX లేదా పేస్ట్ చేసిన టెక్స్ట్ అయితే అందమైన కార్డ్ లాంటి బాక్స్‌లో చూపిస్తుంది
+                # fitz లేకపోతే fallback టెక్స్ట్ చూపిస్తుంది
                 st.text_area(
                     "Uploaded Resume Content",
                     value=resume_text,
                     height=600,
                     disabled=True,
                 )
-
+        except Exception as e:
+            st.error(f"Preview లోడ్ చేయడంలో ఇబ్బంది: {e}")
+            st.text_area(
+                "Uploaded Resume Content",
+                value=resume_text,
+                height=600,
+                disabled=True,
+            )
+    else:
+        # DOCX లేదా direct text ఉన్నప్పుడు
+        st.text_area(
+            "Uploaded Resume Content",
+            value=resume_text,
+            height=600,
+            disabled=True,
+        )
         # ------------ కుడి వైపు: SCORE & ANALYSIS ------------
         with col_analysis:
             if st.button("Run Full Analysis ", type="primary", key="tab1_run_btn"):
